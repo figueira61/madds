@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
-import { TILE } from '../config';
+import { TILE, GAME_W, GAME_H } from '../config';
 import { LEVELS } from '../levels/registry';
 import type { LevelData, LevelObject } from '../levels/format';
-import { buildTilemap, animateWater, animateConveyors, buildBricks, conveyorDir, revealHidden, type BuiltMap } from '../levels/tilemap';
+import { buildTilemap, animateWater, animateConveyors, buildBricks, conveyorDir, revealHidden, isBoost, type BuiltMap } from '../levels/tilemap';
+import { stepAutoscroll, behindEdge, clampRight } from '../systems/autoscroll';
+import { Boost } from '../systems/boost';
 import { BrickBox, Door, Plate, Press, Scent, Switch } from '../entities/puzzle';
 import { LinkBoard, doorCanClose, type Box } from '../systems/links';
 import { TILE_FRAME } from '../art/sprites/tiles';
@@ -86,6 +88,9 @@ export class LevelScene extends Phaser.Scene {
   private finished = false;
   private respawning = false;
   private lookAhead = 0;
+  /** Camera x for levels that scroll on their own. */
+  private autoX = 0;
+  private boost = new Boost();
   private waterPhase: 0 | 1 = 0;
   private beltPhase: 0 | 1 = 0;
   control = new ControlSwitch();
@@ -121,6 +126,8 @@ export class LevelScene extends Phaser.Scene {
     this.control = new ControlSwitch();
     this.bekasZones = [];
     this.zoneHintShown = false;
+    this.autoX = 0;
+    this.boost = new Boost();
     this.links = new LinkBoard();
     this.plates = [];
     this.doors = [];
@@ -179,8 +186,12 @@ export class LevelScene extends Phaser.Scene {
     if (floor) this.add.rectangle(0, this.built.heightPx, this.built.widthPx, floor, 0x3b2616).setOrigin(0).setDepth(-1);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.built.widthPx, this.built.heightPx + floor);
-    cam.startFollow(this.madds, true, 0.15, 0.15);
-    cam.setDeadzone(48, 32);
+    if (this.level.autoscroll) {
+      cam.setScroll(0, this.built.heightPx + floor - GAME_H);
+    } else {
+      cam.startFollow(this.madds, true, 0.15, 0.15);
+      cam.setDeadzone(48, 32);
+    }
     cam.setRoundPixels(true);
 
     if (new URLSearchParams(location.search).get('debug') === '1') {
@@ -357,7 +368,13 @@ export class LevelScene extends Phaser.Scene {
     }
     this.updateSuper();
 
-    const speedMul = this.power.active ? POWER.speedMul : 1;
+    this.boost.update(delta);
+    const feet = this.built.layer.getTileAtWorldXY(this.madds.x, this.madds.arcadeBody.bottom + 2);
+    if (this.madds.onFloor && isBoost(feet)) {
+      if (this.boost.mul === 1) synth.playSfx('jump');
+      this.boost.trigger();
+    }
+    const speedMul = (this.power.active ? POWER.speedMul : 1) * this.boost.mul;
     for (const log of this.logs) log.step(delta);
     this.updateControlSwitch();
     if (this.bekasActive) {
@@ -375,6 +392,7 @@ export class LevelScene extends Phaser.Scene {
     this.updatePuzzles(delta);
     this.ball.update(delta);
     this.updateCamera(delta);
+    if (this.level.autoscroll) this.updateAutoscroll(delta);
     this.events.emit('level-update', delta);
 
     if (!this.respawning && this.touchingHazard()) this.die();
@@ -525,6 +543,10 @@ export class LevelScene extends Phaser.Scene {
     this.madds.arcadeBody.setEnable(false);
     this.time.delayedCall(450, () => {
       const p = this.checkpoints.respawn;
+      if (this.level.autoscroll) {
+        this.autoX = Math.max(0, p.x - 120);
+        this.cameras.main.scrollX = this.autoX;
+      }
       this.madds.setPosition(p.x, p.y);
       this.madds.resetMotion();
       this.madds.arcadeBody.setEnable(true);
@@ -781,7 +803,19 @@ export class LevelScene extends Phaser.Scene {
     return tiles.some((t) => t.index === TILE_FRAME.spikes || t.index === TILE_FRAME.waterA || t.index === TILE_FRAME.waterB || t.index === TILE_FRAME.waterDeep);
   }
 
+  /** The screen moves on its own: falling behind is a fall, and nobody leaves on the right. */
+  private updateAutoscroll(delta: number): void {
+    if (this.respawning) return;
+    this.autoX = stepAutoscroll(this.autoX, this.level.autoscroll!, delta, this.built.widthPx - GAME_W);
+    this.cameras.main.scrollX = this.autoX;
+    this.madds.x = clampRight(this.madds.x, this.autoX, GAME_W);
+    // Sprite x, not the body: right after a respawn the body still holds the old position for a frame.
+    if (behindEdge(this.madds.x + this.madds.arcadeBody.halfWidth, this.autoX)) this.die();
+    if (this.bekas && this.bekas.x < this.autoX - 16) this.bekas.poof();
+  }
+
   private updateCamera(delta: number): void {
+    if (this.level.autoscroll) return;
     const target = this.activeBody().facing * 24;
     this.lookAhead += (target - this.lookAhead) * Math.min(1, delta / 250);
     this.cameras.main.setFollowOffset(-this.lookAhead, 0);
