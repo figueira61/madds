@@ -231,7 +231,7 @@ export class LevelScene extends Phaser.Scene {
       case 'golden-ball':
       case 'cromo': {
         const item = new Pickup(this, p.x, p.y - 8, o.type);
-        this.physics.add.overlap(this.madds, item, () => {
+        const take = () => {
           if (item.taken) return;
           item.collect();
           if (o.type === 'cromo') {
@@ -243,7 +243,10 @@ export class LevelScene extends Phaser.Scene {
             this.emitPower();
             synth.playSfx('golden');
           }
-        });
+        };
+        this.physics.add.overlap(this.madds, item, take);
+        // Bekas can fetch a cromo from places only she fits into.
+        if (o.type === 'cromo' && this.bekas) this.physics.add.overlap(this.bekas, item, take);
         break;
       }
       case 'boss-hunter':
@@ -283,10 +286,11 @@ export class LevelScene extends Phaser.Scene {
       case 'brick-box': {
         const box = new BrickBox(this, p.x, p.y);
         const rect = { x: Number(o.props?.bx), y: Number(o.props?.by), w: Number(o.props?.bw), h: Number(o.props?.bh) };
+        // An opened crate lets the ball fly past, so crates lined up can be opened one after another.
         this.physics.add.overlap(this.ball, box, () => {
           if (box.open()) buildBricks(this, this.built.layer, rect, (tx, ty) => this.burst(tx * TILE + 8, ty * TILE + 8, 1, 3));
           this.ball.recall();
-        }, () => this.ball.inFlight);
+        }, () => this.ball.inFlight && !box.opened);
         break;
       }
       case 'plate':
@@ -439,10 +443,10 @@ export class LevelScene extends Phaser.Scene {
       this.zoneHintShown = true;
       this.events.emit('hud-hint', 'Carrega em C (ou no botão da pata) para controlares a Bekas');
     }
-    // A parked Bekas rejoins Madds once Madds leaves the zone she was left in.
+    // A parked Bekas pops back next to Madds once Madds leaves the zone she was left in.
     if (this.bekas.parked && !this.bekasActive) {
       const z = zoneOf(this.bekas.x, this.bekas.y);
-      if (!z || !z.contains(this.madds.x, this.madds.y - 4)) this.bekas.parked = false;
+      if (!z || !z.contains(this.madds.x, this.madds.y - 4)) this.bekas.poof();
     }
     if (!this.controls.state.justPressed('bekas')) return;
     const canSwitch = active.onFloor && !this.madds.busy && !this.respawning && !this.frozen;
