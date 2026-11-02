@@ -82,6 +82,8 @@ const reinforced = [
 
 const softDirt = dirt(23, 'u', 't', 'y');
 
+const waterDeep = Array.from({ length: 16 }, (_, i) => (i % 6 === 3 ? 'AAAaAAAAAAAaAAAA' : 'AAAAAAAAAAAAAAAA'));
+
 export const TILE_FRAME = {
   groundTop: 0,
   ground: 1,
@@ -91,11 +93,12 @@ export const TILE_FRAME = {
   waterB: 5,
   reinforced: 6,
   softDirt: 7,
+  waterDeep: 8,
 } as const;
 
 export const TILES_SHEET: SheetDef = {
   key: 'tiles',
   frameW: 16,
   frameH: 16,
-  frames: [groundTop, ground, platform, spikes, water(0), water(1), reinforced, softDirt],
+  frames: [groundTop, ground, platform, spikes, water(0), water(1), reinforced, softDirt, waterDeep],
 };
