@@ -5,9 +5,9 @@ const g = new Grid(30, 17)
   .rect(0, 15, 30, 2, '#')
   .rect(0, 0, 1, 15, '#')
   .rect(29, 0, 1, 15, '#')
-  .rect(5, 10, 6, 1, '=')
-  .rect(19, 10, 6, 1, '=')
-  .rect(12, 6, 6, 1, '=');
+  .rect(5, 12, 6, 1, '=')
+  .rect(19, 12, 6, 1, '=')
+  .rect(12, 9, 6, 1, '=');
 
 /** 1-boss Clareira: arena for the Hunter. Fixed camera (the map is one screen wide). */
 export const L1_BOSS: LevelData = {
@@ -22,7 +22,7 @@ export const L1_BOSS: LevelData = {
   objects: [
     { type: 'start', x: 3, y: 14 },
     { type: 'boss-hunter', x: 24, y: 14 },
-    { type: 'minion-spawn', x: 7, y: 9 },
-    { type: 'minion-spawn', x: 22, y: 9 },
+    { type: 'minion-spawn', x: 7, y: 11 },
+    { type: 'minion-spawn', x: 22, y: 11 },
   ],
 };
