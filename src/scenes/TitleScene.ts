@@ -57,6 +57,7 @@ export class TitleScene extends Phaser.Scene {
     this.menu = new Menu(this, GAME_W / 2, 124, [
       { label: 'Continuar', action: () => this.scene.start('WorldMap'), enabled: progress },
       { label: 'Novo jogo', action: () => (progress ? this.confirmNewGame() : this.newGame()) },
+      { label: 'Álbum', action: () => this.scene.start('Album'), enabled: progress },
       { label: 'Opções', action: () => this.openOptions() },
     ]);
   }

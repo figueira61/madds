@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyResult, isUnlocked, hasBekas, hasProgress, bekasJoinedFor } from '../src/progress';
+import { applyResult, isUnlocked, hasBekas, hasProgress, bekasJoinedFor, gameSummary, albumState, CROMO_IDS } from '../src/progress';
 import { LEVELS } from '../src/levels/registry';
 import { defaultSave } from '../src/systems/saveStore';
 
@@ -68,5 +68,25 @@ describe('mundos', () => {
     expect(bekasJoinedFor(defaultSave(), LEVELS['2-1'])).toBe(true);
     expect(bekasJoinedFor(defaultSave(), LEVELS['1-1'])).toBe(false);
     expect(bekasJoinedFor(w1(), LEVELS['1-1'])).toBe(true);
+  });
+});
+
+describe('final e álbum', () => {
+  it('resumo soma os melhores tempos, as quedas e conta os cromos', () => {
+    const s = { ...defaultSave(), bestTimesMs: { '1-1': 60000, '2-1': 30000 }, falls: { '1-1': 2, '2-1': 3 }, cromos: ['1-1', '2-boss'] };
+    expect(gameSummary(s)).toEqual({ totalTimeMs: 90000, falls: 5, cromos: 2, total: 12 });
+    expect(gameSummary(defaultSave())).toEqual({ totalTimeMs: 0, falls: 0, cromos: 0, total: 12 });
+  });
+
+  it('12 cromos: um por nível e um por boss', () => {
+    expect(CROMO_IDS).toHaveLength(12);
+    expect(new Set(CROMO_IDS).size).toBe(12);
+  });
+
+  it('álbum completo só com os 12', () => {
+    expect(albumState({ ...defaultSave(), cromos: CROMO_IDS.slice(0, 11) }).complete).toBe(false);
+    const full = albumState({ ...defaultSave(), cromos: [...CROMO_IDS] });
+    expect(full.complete).toBe(true);
+    expect(full.owned.every(Boolean)).toBe(true);
   });
 });

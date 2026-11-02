@@ -51,8 +51,9 @@ export class ResultsScene extends Phaser.Scene {
     const items = [];
     if (outro && firstClear) {
       // The story ending (the reunion) must not be skippable by picking another option.
-      // After a world's boss: on to the map if the next world exists, otherwise the "to be continued" screen.
-      const after = level && firstLevelOf(level.world + 1) && LEVELS[firstLevelOf(level.world + 1)!] ? 'WorldMap' : 'Continua';
+      // After a world's boss: on to the map if the next world exists.
+      // The last world ends with the finale and the credits.
+      const after = level?.world === 3 ? 'Finale' : level && firstLevelOf(level.world + 1) && LEVELS[firstLevelOf(level.world + 1)!] ? 'WorldMap' : 'Continua';
       items.push({ label: 'Continuar', action: () => this.scene.start('Cutscene', { id: outro, next: { scene: after } }) });
     } else {
       if (next && LEVELS[next]) items.push({ label: 'Próximo nível', action: () => enterLevel(this, next) });

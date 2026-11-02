@@ -10,6 +10,9 @@ import { PauseScene } from './scenes/PauseScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { ResultsScene } from './scenes/ResultsScene';
 import { ContinuaScene } from './scenes/ContinuaScene';
+import { FinaleScene } from './scenes/FinaleScene';
+import { CreditsScene } from './scenes/CreditsScene';
+import { AlbumScene } from './scenes/AlbumScene';
 import { OrientationGuard } from './robustness/OrientationGuard';
 
 const game = new Phaser.Game({
@@ -23,7 +26,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 4, gamepad: true },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 }, debug: false } },
-  scene: [BootScene, TitleScene, WorldMapScene, CutsceneScene, LevelScene, HudScene, PauseScene, OptionsScene, ResultsScene, ContinuaScene],
+  scene: [BootScene, TitleScene, WorldMapScene, CutsceneScene, LevelScene, HudScene, PauseScene, OptionsScene, ResultsScene, ContinuaScene, FinaleScene, CreditsScene, AlbumScene],
 });
 
 new OrientationGuard(game);

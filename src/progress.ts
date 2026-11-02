@@ -42,3 +42,29 @@ export function bekasJoinedFor(save: SaveData, level: LevelData): boolean {
 export function hasProgress(save: SaveData): boolean {
   return save.completed.length > 0;
 }
+
+/** Album order: every level of every world, the boss cromo after its world's levels. */
+export const CROMO_IDS: readonly string[] = LEVEL_ORDER.filter((id) => !id.startsWith('test-'));
+
+export interface GameSummary {
+  totalTimeMs: number;
+  falls: number;
+  cromos: number;
+  total: number;
+}
+
+/** For the credits: sum of best times and fewest falls per level, cromos found out of 12. */
+export function gameSummary(save: SaveData): GameSummary {
+  const sum = (m: Record<string, number>) => Object.values(m).reduce((a, b) => a + b, 0);
+  return {
+    totalTimeMs: sum(save.bestTimesMs),
+    falls: sum(save.falls),
+    cromos: CROMO_IDS.filter((id) => save.cromos.includes(id)).length,
+    total: CROMO_IDS.length,
+  };
+}
+
+export function albumState(save: SaveData): { owned: boolean[]; complete: boolean } {
+  const owned = CROMO_IDS.map((id) => save.cromos.includes(id));
+  return { owned, complete: owned.every(Boolean) };
+}

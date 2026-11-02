@@ -6,7 +6,8 @@ export interface CutsceneLine {
   text: string;
 }
 
-export type CutsceneId = 'w1-intro' | 'w1-preboss' | 'w1-reunion' | 'w2-intro' | 'w2-preboss' | 'w2-outro';
+export type CutsceneId = 'w1-intro' | 'w1-preboss' | 'w1-reunion' | 'w2-intro' | 'w2-preboss' | 'w2-outro'
+  | 'w3-intro' | 'w3-preboss' | 'w3-outro';
 
 export const SPEAKER_NAME: Record<CutsceneLine['speaker'], string> = {
   madds: 'Madds',
@@ -60,5 +61,25 @@ export const CUTSCENES: Record<CutsceneId, CutsceneLine[]> = {
     { speaker: 'collector', portrait: 'collector', text: 'Mas os animais e os blocos eram só o aperitivo. No Estádio guardo a peça mais rara de todas: o grande troféu.' },
     { speaker: 'collector', portrait: 'collector', text: 'Vem buscá-lo, se fores capaz!' },
     { speaker: 'madds', portrait: 'madds-determined', text: 'Um estádio? Então vais jogar no MEU campo. Vamos, Bekas!' },
+  ],
+  'w3-intro': [
+    { speaker: 'narrador', text: 'O Estádio. Hoje há corrida no circuito à volta do relvado, e as bancadas estão cheias.' },
+    { speaker: 'collector', portrait: 'collector', text: 'Senhoras e senhores! O grande troféu é MEU. E quem o quiser, que o venha buscar... a correr!' },
+    { speaker: 'madds', portrait: 'madds-determined', text: 'Corrida, futebol, e um troféu para recuperar? Este é o meu mundo.' },
+    { speaker: 'bekas', portrait: 'bekas-happy', text: 'Ão! Ão!' },
+    { speaker: 'narrador', text: 'Nas boxes, os carros já aquecem os motores. O ecrã não vai esperar por ninguém!' },
+  ],
+  'w3-preboss': [
+    { speaker: 'narrador', text: 'No meio do relvado, o Colecionador espera num trono dourado a flutuar.' },
+    { speaker: 'collector', portrait: 'collector', text: 'Animais, cidades, carros... Tu estragaste tudo. Mas este troféu ninguém me tira!' },
+    { speaker: 'madds', portrait: 'madds-determined', text: 'Isso vamos ver. Até agora não falhei nenhum remate.' },
+    { speaker: 'collector', portrait: 'collector', text: 'Então tenta! Ah, e já agora... na baliza ninguém me passa.' },
+  ],
+  'w3-outro': [
+    { speaker: 'narrador', text: 'O Colecionador foge pela saída do túnel. O troféu fica no relvado, a brilhar.' },
+    { speaker: 'madds', portrait: 'madds-happy', text: 'WOW... Conseguimos, Bekas! Conseguimos MESMO!' },
+    { speaker: 'bekas', portrait: 'bekas-happy', text: 'Ão! Ão! Ão!' },
+    { speaker: 'narrador', text: 'Os animais voltam ao santuário. A cidade de blocos está de pé. E o estádio inteiro grita um nome.' },
+    { speaker: 'madds', portrait: 'madds-hands', text: 'Este troféu não é só meu. É de todos os que ajudámos... e da melhor parceira do mundo.' },
   ],
 };
