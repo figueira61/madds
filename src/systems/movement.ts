@@ -33,6 +33,9 @@ export const MADDS_PARAMS: MoveParams = {
   canWallJump: true,
 };
 
+/** Bekas when the player controls her: lower jump, no wall jump. */
+export const BEKAS_PARAMS: MoveParams = { ...MADDS_PARAMS, jumpSpeed: 260, canWallJump: false };
+
 export interface MoveInput {
   left: boolean;
   right: boolean;

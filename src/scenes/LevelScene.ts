@@ -16,6 +16,8 @@ import { Health } from '../systems/health';
 import { Checkpoints } from '../systems/checkpoints';
 import { PowerMeter, POWER } from '../systems/powerMeter';
 import { IdleTimer } from '../systems/idle';
+import { ControlSwitch } from '../systems/control';
+import { ActionState } from '../input/actions';
 import { synth } from '../audio/Synth';
 import { gameState } from '../gameState';
 import type { PauseChoice } from './PauseScene';
@@ -33,6 +35,9 @@ export interface LevelResult {
   animalsFreed: number;
   animalsTotal: number;
 }
+
+/** Input for the character the player is not driving. */
+const NO_INPUT = new ActionState();
 
 const NO_GROUP_DEFAULTS = {} as Phaser.Types.Physics.Arcade.PhysicsGroupDefaults;
 
@@ -75,6 +80,9 @@ export class LevelScene extends Phaser.Scene {
   private lookAhead = 0;
   private waterPhase: 0 | 1 = 0;
   private beltPhase: 0 | 1 = 0;
+  control = new ControlSwitch();
+  bekasZones: Phaser.Geom.Rectangle[] = [];
+  private zoneHintShown = false;
 
   constructor() {
     super('Level');
@@ -82,7 +90,8 @@ export class LevelScene extends Phaser.Scene {
 
   init(data: LevelSceneData): void {
     this.level = LEVELS[data.levelId] ?? LEVELS['test-room'];
-    this.bekasJoined = data.bekasJoined ?? false;
+    // From World 2 on Bekas is always there, whatever path started the level.
+    this.bekasJoined = (data.bekasJoined ?? false) || this.level.world >= 2;
     this.elapsedMs = 0;
     this.gotCromo = false;
     this.animalsFreed = 0;
@@ -96,6 +105,9 @@ export class LevelScene extends Phaser.Scene {
     this.minionSpawns = [];
     this.minions = [];
     this.tookDamage = false;
+    this.control = new ControlSwitch();
+    this.bekasZones = [];
+    this.zoneHintShown = false;
   }
 
   create(): void {
@@ -233,6 +245,12 @@ export class LevelScene extends Phaser.Scene {
         });
         break;
       }
+      case 'bekas-zone':
+        this.bekasZones.push(new Phaser.Geom.Rectangle(o.x * TILE, o.y * TILE, Number(o.props?.w ?? 1) * TILE, Number(o.props?.h ?? 1) * TILE));
+        break;
+      case 'paw-sign':
+        this.add.image(p.x, p.y, 'bekas-sign').setOrigin(0.5, 1).setDepth(2);
+        break;
       case 'exit': {
         const sign = this.physics.add.staticSprite(p.x, p.y - 12, 'exit', 0);
         this.physics.add.overlap(this.madds, sign, () => this.complete());
@@ -257,7 +275,8 @@ export class LevelScene extends Phaser.Scene {
     this.power.update(delta);
     this.idle.update(delta, this.controls.state.anyDown() || !this.madds.onFloor || Math.abs(this.madds.move.vx) > 1);
 
-    if (this.controls.state.justPressed('super') && !this.madds.busy && this.power.activate()) {
+    const bekasActive = this.bekasActive;
+    if (!bekasActive && this.controls.state.justPressed('super') && !this.madds.busy && this.power.activate()) {
       this.transform();
       return;
     }
@@ -265,16 +284,81 @@ export class LevelScene extends Phaser.Scene {
 
     const speedMul = this.power.active ? POWER.speedMul : 1;
     for (const log of this.logs) log.step(delta);
-    this.madds.update(delta, this.controls.state, speedMul);
+    this.updateControlSwitch();
+    if (this.bekasActive) {
+      const bekas = this.bekas!;
+      this.madds.update(delta, NO_INPUT, speedMul);
+      bekas.drive(delta, this.controls.state);
+      if (this.controls.state.justPressed('kick')) this.bekasDig();
+    } else {
+      this.madds.update(delta, this.controls.state, speedMul);
+      this.bekas?.follow();
+      this.updateIdleAnimations();
+      if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
+    }
     this.rideLogs();
-    this.bekas?.follow();
-    this.updateIdleAnimations();
-    if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
     this.ball.update(delta);
     this.updateCamera(delta);
     this.events.emit('level-update', delta);
 
     if (!this.respawning && this.touchingHazard()) this.die();
+    if (this.bekas && this.bekasActive && this.hazardUnder(this.bekas.arcadeBody)) this.bekas.poof();
+  }
+
+  get bekasActive(): boolean {
+    return this.control.active === 'bekas' && !!this.bekas;
+  }
+
+  /** The character the player is driving. */
+  activeBody(): Madds | Bekas {
+    return this.bekasActive ? this.bekas! : this.madds;
+  }
+
+  private updateControlSwitch(): void {
+    if (!this.bekas) return;
+    const active = this.activeBody();
+    const zoneOf = (x: number, y: number) => this.bekasZones.find((z) => z.contains(x, y - 4));
+    const inZone = !!zoneOf(active.x, active.y);
+    this.control.setInZone(inZone);
+    this.controls.setVisible('bekas', this.control.buttonVisible);
+    if (inZone && !this.zoneHintShown && !this.bekasActive) {
+      this.zoneHintShown = true;
+      this.events.emit('hud-hint', 'Carrega em C (ou no botão da pata) para controlares a Bekas');
+    }
+    // A parked Bekas rejoins Madds once Madds leaves the zone she was left in.
+    if (this.bekas.parked && !this.bekasActive) {
+      const z = zoneOf(this.bekas.x, this.bekas.y);
+      if (!z || !z.contains(this.madds.x, this.madds.y - 4)) this.bekas.parked = false;
+    }
+    if (!this.controls.state.justPressed('bekas')) return;
+    const canSwitch = active.onFloor && !this.madds.busy && !this.respawning && !this.frozen;
+    if (!this.control.toggle(canSwitch)) return;
+    const nowBekas = this.control.active === 'bekas';
+    this.bekas.stopAffection();
+    this.bekas.setControlled(nowBekas);
+    if (nowBekas) this.madds.resetMotion();
+    this.cameras.main.startFollow(nowBekas ? this.bekas : this.madds, true, 0.15, 0.15);
+    synth.playSfx('bark');
+  }
+
+  /** Hands control back to Madds (death, level end). */
+  private resetControl(): void {
+    if (!this.bekasActive) return;
+    this.control.reset();
+    this.bekas!.setControlled(false);
+    this.bekas!.parked = false;
+    this.cameras.main.startFollow(this.madds, true, 0.15, 0.15);
+  }
+
+  private bekasDig(): void {
+    const layer = this.built.layer;
+    this.bekas!.dig(
+      (tx, ty) => layer.getTileAt(tx, ty)?.index === TILE_FRAME.softDirt,
+      (tx, ty) => {
+        layer.removeTileAt(tx, ty);
+        this.burst(tx * TILE + TILE / 2, ty * TILE + TILE / 2, 4, 6);
+      },
+    );
   }
 
   /** Damages Madds (enemy, projectile). Returns false if she was immune. */
@@ -298,6 +382,7 @@ export class LevelScene extends Phaser.Scene {
   die(): void {
     if (this.respawning) return;
     this.respawning = true;
+    this.resetControl();
     this.photoIdle = false;
     this.bekas?.stopAffection();
     this.madds.busy = false;
@@ -324,6 +409,7 @@ export class LevelScene extends Phaser.Scene {
   complete(): void {
     if (this.finished) return;
     this.finished = true;
+    this.resetControl();
     const result: LevelResult = {
       levelId: this.level.id,
       timeMs: Math.round(this.elapsedMs),
@@ -551,14 +637,18 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private touchingHazard(): boolean {
-    const b = this.madds.arcadeBody;
+    return this.hazardUnder(this.madds.arcadeBody);
+  }
+
+  /** Pits, spikes and water under a body. */
+  private hazardUnder(b: Phaser.Physics.Arcade.Body): boolean {
     if (b.top > this.built.heightPx) return true;
     const tiles = this.built.layer.getTilesWithinWorldXY(b.left + 2, b.top + 6, b.width - 4, b.height - 6);
     return tiles.some((t) => t.index === TILE_FRAME.spikes || t.index === TILE_FRAME.waterA || t.index === TILE_FRAME.waterB || t.index === TILE_FRAME.waterDeep);
   }
 
   private updateCamera(delta: number): void {
-    const target = this.madds.facing * 24;
+    const target = this.activeBody().facing * 24;
     this.lookAhead += (target - this.lookAhead) * Math.min(1, delta / 250);
     this.cameras.main.setFollowOffset(-this.lookAhead, 0);
   }

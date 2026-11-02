@@ -21,6 +21,8 @@ export class HudScene extends Phaser.Scene {
   private power = 0;
   private powerActive = false;
   private wasFull = false;
+  private hint!: Phaser.GameObjects.Text;
+  private hintTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super('Hud');
@@ -38,6 +40,7 @@ export class HudScene extends Phaser.Scene {
     this.cromo = this.add.sprite(GAME_W - 46, 13, 'cromo', 0).setTint(0x444444).setAlpha(0.6);
     this.bossBar = this.add.graphics();
     this.bossName = text(this, GAME_W / 2, 30, '', 8).setVisible(false);
+    this.hint = text(this, GAME_W / 2, 52, '', 9, '#ffd34a').setVisible(false);
 
     this.setHearts(this.level.health.hearts);
     this.setPower(this.level.power.value, this.level.power.active);
@@ -53,6 +56,14 @@ export class HudScene extends Phaser.Scene {
     on('hud-cromo', (got: boolean) => this.setCromo(got));
     on('hud-boss', (hp: number, max: number, name: string) => this.setBoss(hp, max, name));
     on('hud-adqc', () => this.shoutAdqc());
+    on('hud-hint', (msg: string | null) => this.showHint(msg));
+  }
+
+  /** A short tip under the HUD, hidden after 4 s. */
+  private showHint(msg: string | null): void {
+    this.hintTimer?.remove(false);
+    this.hint.setText(msg ?? '').setVisible(!!msg);
+    if (msg) this.hintTimer = this.time.delayedCall(4000, () => this.hint.setVisible(false));
   }
 
   update(time: number): void {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createMoveState, stepMovement, MADDS_PARAMS, type MoveInput, type Contact, type MoveState } from '../../src/systems/movement';
+import { createMoveState, stepMovement, MADDS_PARAMS, BEKAS_PARAMS, type MoveInput, type Contact, type MoveState } from '../../src/systems/movement';
 
 const NONE: MoveInput = { left: false, right: false, jumpPressed: false, jumpHeld: false };
 const FLOOR: Contact = { onFloor: true, wallLeft: false, wallRight: false };
@@ -98,5 +98,14 @@ describe('velocidade de queda', () => {
     const s = run({ ...createMoveState(), sinceFloorMs: 1000 }, NONE, AIR, 5000);
     expect(s.vy).toBe(P.maxFallSpeed);
     expect(P.maxFallSpeed).toBeLessThanOrEqual(600);
+  });
+
+  it('a Bekas salta a 260 px/s e não faz wall jump', () => {
+    expect(BEKAS_PARAMS.jumpSpeed).toBe(260);
+    const jumped = stepMovement(createMoveState(), { ...NONE, jumpPressed: true, jumpHeld: true }, FLOOR, 10, BEKAS_PARAMS);
+    expect(jumped.vy).toBe(-260);
+    const onWall = { ...createMoveState(), vy: 50, sinceFloorMs: 500 };
+    const s = stepMovement(onWall, { ...NONE, jumpPressed: true, jumpHeld: true }, { ...AIR, wallLeft: true }, 10, BEKAS_PARAMS);
+    expect(s.vy).toBeGreaterThan(0);
   });
 });

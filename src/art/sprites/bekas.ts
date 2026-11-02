@@ -97,5 +97,6 @@ export const BEKAS_SHEET: SheetDef = {
     bark: { frames: [12, 0], fps: 6, repeat: 1 },
     celebrate: { frames: [4, 1], fps: 5, repeat: -1 },
     dig: { frames: [13, 14], fps: 8, repeat: -1 },
+    sniff: { frames: [13, 0, 13, 0], fps: 5, repeat: 0 },
   },
 };
