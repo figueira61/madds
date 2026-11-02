@@ -10,7 +10,9 @@ import { drawBackground } from '../art/background';
 import { Madds } from '../entities/Madds';
 import { Ball } from '../entities/Ball';
 import { Bekas } from '../entities/Bekas';
-import { Hunter, HUNTER_MAX_HP, type Net } from '../entities/Hunter';
+import { Hunter, type Net } from '../entities/Hunter';
+import { Robot, type Shockwave } from '../entities/Robot';
+import type { Boss } from '../entities/Boss';
 import { Beetle, Bird, type Enemy } from '../entities/enemies';
 import { Cage, LogPlatform, Pickup } from '../entities/props';
 import { InputManager } from '../input/InputManager';
@@ -68,8 +70,9 @@ export class LevelScene extends Phaser.Scene {
   bekas: Bekas | null = null;
   bekasJoined = false;
   private photoIdle = false;
-  hunter: Hunter | null = null;
+  boss: Boss | null = null;
   private nets!: Phaser.Physics.Arcade.Group;
+  private waves!: Phaser.Physics.Arcade.Group;
   private minionSpawns: { x: number; y: number }[] = [];
   private minions: Beetle[] = [];
   private tookDamage = false;
@@ -110,7 +113,7 @@ export class LevelScene extends Phaser.Scene {
     this.logs = [];
     this.bekas = null;
     this.photoIdle = false;
-    this.hunter = null;
+    this.boss = null;
     this.minionSpawns = [];
     this.minions = [];
     this.tookDamage = false;
@@ -161,6 +164,9 @@ export class LevelScene extends Phaser.Scene {
       (n as Net).destroy();
       this.hurtMadds((n as Net).x);
     });
+    this.waves = this.physics.add.group();
+    this.waves.defaults = NO_GROUP_DEFAULTS;
+    this.physics.add.overlap(this.madds, this.waves, (_m, w) => this.hurtMadds((w as Shockwave).x));
     this.events.on('madds-hurt', () => (this.tookDamage = true));
     this.events.on('madds-died', () => (this.tookDamage = true));
 
@@ -242,6 +248,9 @@ export class LevelScene extends Phaser.Scene {
       }
       case 'boss-hunter':
         this.spawnHunter(p.x, p.y);
+        break;
+      case 'boss-robot':
+        this.spawnRobot(p.x, p.y);
         break;
       case 'minion-spawn':
         this.minionSpawns.push(p);
@@ -581,25 +590,33 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private spawnHunter(x: number, y: number): void {
-    const hunter = new Hunter(this, x, y, this.madds, 3 * 16, this.built.widthPx - 3 * 16, (net) => this.nets.add(net));
-    this.hunter = hunter;
-    this.physics.add.collider(hunter, this.built.layer);
-    this.physics.add.overlap(this.ball, hunter, () => {
-      if (!hunter.vulnerable) return;
-      hunter.hit(this.ball.powered ? POWER.bossDamageMul : 1);
+    this.spawnBoss(new Hunter(this, x, y, this.madds, 3 * TILE, this.built.widthPx - 3 * TILE, (net) => this.nets.add(net)));
+  }
+
+  private spawnRobot(x: number, y: number): void {
+    this.spawnBoss(new Robot(this, x, y, this.madds, 3 * TILE, this.built.widthPx - 3 * TILE, (shot) => this.nets.add(shot), (wave) => this.waves.add(wave)));
+  }
+
+  /** Wires any boss: ball hits, contact damage, HUD bar, minions, and the no-damage cromo. */
+  private spawnBoss(boss: Boss): void {
+    this.boss = boss;
+    this.physics.add.collider(boss, this.built.layer);
+    this.physics.add.overlap(this.ball, boss, () => {
+      if (!boss.vulnerable) return;
+      boss.hit(this.ball.powered ? POWER.bossDamageMul : 1);
       this.ball.recall();
     }, () => this.ball.inFlight);
-    this.physics.add.overlap(this.madds, hunter, () => {
-      if (!hunter.defeated) this.hurtMadds(hunter.x);
+    this.physics.add.overlap(this.madds, boss, () => {
+      if (!boss.defeated) this.hurtMadds(boss.x);
     });
-    hunter.on('hunter-hit', (hp: number) => this.events.emit('hud-boss', hp, HUNTER_MAX_HP, 'Caçador'));
-    hunter.once('hunter-defeated', () => this.onHunterDefeated());
+    boss.on('boss-hit', (hp: number) => this.events.emit('hud-boss', hp, boss.maxHp, boss.displayName));
+    boss.once('boss-defeated', () => this.onBossDefeated());
     this.time.addEvent({ delay: 8000, loop: true, callback: () => this.spawnMinion() });
-    this.time.delayedCall(50, () => this.events.emit('hud-boss', hunter.hp, HUNTER_MAX_HP, 'Caçador'));
+    this.time.delayedCall(50, () => this.events.emit('hud-boss', boss.hp, boss.maxHp, boss.displayName));
   }
 
   private spawnMinion(): void {
-    if (!this.hunter || this.hunter.defeated || this.minionSpawns.length === 0) return;
+    if (!this.boss || this.boss.defeated || this.minionSpawns.length === 0) return;
     this.minions = this.minions.filter((m) => m.alive);
     if (this.minions.length >= 2) return;
     const p = Phaser.Utils.Array.GetRandom(this.minionSpawns);
@@ -609,11 +626,12 @@ export class LevelScene extends Phaser.Scene {
     this.minions.push(minion);
   }
 
-  private onHunterDefeated(): void {
-    const hunter = this.hunter!;
-    this.events.emit('hud-boss', 0, HUNTER_MAX_HP, '');
+  private onBossDefeated(): void {
+    const boss = this.boss!;
+    this.events.emit('hud-boss', 0, boss.maxHp, '');
     this.minions.forEach((m) => m.alive && m.defeat());
     this.nets.clear(true, true);
+    this.waves.clear(true, true);
     if (!this.tookDamage) {
       this.gotCromo = true;
       this.events.emit('hud-cromo', true);
@@ -621,12 +639,7 @@ export class LevelScene extends Phaser.Scene {
     }
     synth.stopMusic();
     synth.playSfx('goal');
-    this.time.delayedCall(1200, () => {
-      hunter.setFlipX(false);
-      hunter.play('hunter-walk');
-      (hunter.body as Phaser.Physics.Arcade.Body).setEnable(false);
-      this.tweens.add({ targets: hunter, x: this.built.widthPx + 40, duration: 1200, onComplete: () => this.complete() });
-    });
+    this.time.delayedCall(1200, () => boss.leave(this.built.widthPx, () => this.complete()));
   }
 
   /** Long rest: photo of Bekas before the rescue, the affection routine after. Any input interrupts. */

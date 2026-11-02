@@ -6,7 +6,7 @@ export function placeholder(id: string, name: string, kind: 'normal' | 'boss'): 
   const tiles = new Grid(40, 17).rect(0, 15, 40, 2, '#').rows();
   const objects: LevelData['objects'] =
     kind === 'boss'
-      ? [{ type: 'start', x: 3, y: 14 }, { type: 'boss-hunter', x: 30, y: 14 }, { type: 'minion-spawn', x: 20, y: 14 }]
+      ? [{ type: 'start', x: 3, y: 14 }, { type: 'boss-robot', x: 30, y: 14 }, { type: 'minion-spawn', x: 20, y: 14 }]
       : [
           { type: 'start', x: 2, y: 14 },
           { type: 'checkpoint', x: 10, y: 14, id: 'c1' },

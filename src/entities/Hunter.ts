@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Madds } from './Madds';
 import { synth } from '../audio/Synth';
+import type { Boss } from './Boss';
 
 export const HUNTER_MAX_HP = 12;
 const HIT_INVULN_MS = 600;
@@ -19,21 +20,32 @@ const PHASES: Record<1 | 2 | 3, PhaseTuning> = {
   3: { walkSpeed: 90, throwEveryMs: 2000, nets: 3 },
 };
 
-/** Net thrown in an arc; the scene destroys it on contact with Madds or the ground. */
+/** Projectile thrown in an arc (the Hunter's net, the Robot's brick); the scene destroys it on contact with Madds or the ground. */
 export class Net extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene: Phaser.Scene, x: number, y: number, vx: number, vy: number) {
-    super(scene, x, y, 'net', 0);
+  constructor(scene: Phaser.Scene, x: number, y: number, vx: number, vy: number, texture: 'net' | 'brick-shot' = 'net') {
+    super(scene, x, y, texture, 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(5, 1, 1).setGravityY(NET_GRAVITY - 900).setVelocity(vx, vy);
-    this.setDepth(9).play('net-spin');
+    if (texture === 'net') body.setCircle(5, 1, 1);
+    else body.setSize(7, 6).setOffset(0, 2);
+    body.setGravityY(NET_GRAVITY - 900).setVelocity(vx, vy);
+    this.setDepth(9);
+    if (texture === 'net') this.play('net-spin');
+    else this.setAngularVelocity(vx > 0 ? 360 : -360);
   }
 }
 
+/** Velocity that lands a projectile thrown from (fx, fy) on (tx, ty) after NET_FLIGHT_S seconds. */
+export function arcVelocity(fx: number, fy: number, tx: number, ty: number): { vx: number; vy: number } {
+  return { vx: (tx - fx) / NET_FLIGHT_S, vy: (ty - fy - 0.5 * NET_GRAVITY * NET_FLIGHT_S * NET_FLIGHT_S) / NET_FLIGHT_S };
+}
+
 /** The Hunter: three phases (walk + nets, jumps, net fans + charges). Emits 'hunter-defeated' on the scene. */
-export class Hunter extends Phaser.Physics.Arcade.Sprite {
+export class Hunter extends Phaser.Physics.Arcade.Sprite implements Boss {
   hp = HUNTER_MAX_HP;
+  readonly maxHp = HUNTER_MAX_HP;
+  readonly displayName = 'Caçador';
   defeated = false;
   private dir: 1 | -1 = -1;
   private throwMs = 1500;
@@ -78,7 +90,7 @@ export class Hunter extends Phaser.Physics.Arcade.Sprite {
     synth.playSfx('enemy');
     this.play('hunter-hurt', true);
     this.scene.cameras.main.shake(100, 0.005);
-    this.emit('hunter-hit', this.hp);
+    this.emit('boss-hit', this.hp);
     if (this.hp === 0) this.defeat();
   }
 
@@ -154,12 +166,9 @@ export class Hunter extends Phaser.Physics.Arcade.Sprite {
     this.play('hunter-throw', true);
     const fromX = this.x;
     const fromY = this.y - 26;
-    const dx = this.madds.x - fromX;
-    const dy = this.madds.y - 10 - fromY;
     const spread = count === 1 ? [0] : [-50, 0, 50];
     for (const s of spread) {
-      const vx = (dx + s) / NET_FLIGHT_S;
-      const vy = (dy - 0.5 * NET_GRAVITY * NET_FLIGHT_S * NET_FLIGHT_S) / NET_FLIGHT_S;
+      const { vx, vy } = arcVelocity(fromX, fromY, this.madds.x + s, this.madds.y - 10);
       this.throwNet(new Net(this.scene, fromX, fromY, vx, vy));
     }
   }
@@ -169,6 +178,14 @@ export class Hunter extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
     this.setAlpha(1).clearTint();
     this.play('hunter-defeated');
-    this.emit('hunter-defeated');
+    this.emit('boss-defeated');
+  }
+
+  /** Walks off to the right. */
+  leave(levelWidthPx: number, onDone: () => void): void {
+    this.setFlipX(false);
+    this.play('hunter-walk');
+    (this.body as Phaser.Physics.Arcade.Body).setEnable(false);
+    this.scene.tweens.add({ targets: this, x: levelWidthPx + 40, duration: 1200, onComplete: onDone });
   }
 }
