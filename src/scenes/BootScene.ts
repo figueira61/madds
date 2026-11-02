@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { GAME_W, GAME_H } from '../config';
+import { registerAllSheets } from '../art/registerSheets';
+import { drawForestBackground } from '../art/background';
+import { TILES_SHEET } from '../art/sprites/tiles';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,6 +9,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.add.text(GAME_W / 2, GAME_H / 2, 'Madds', { fontFamily: 'monospace', fontSize: '32px', color: '#ffffff' }).setOrigin(0.5);
+    registerAllSheets(this);
+    drawForestBackground(this, 960);
+    TILES_SHEET.frames.forEach((_, i) => this.add.image(40 + i * 40, 200, 'tiles', i).setScale(2));
   }
 }
