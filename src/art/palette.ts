@@ -24,4 +24,6 @@ export const PALETTE: Record<string, string> = {
   l: '#ffcc33', L: '#d99a1a',
   // hunter khaki
   f: '#a89a5a', F: '#6f6636',
+  // the Collector's velvet
+  p: '#8a4fc0', P: '#4e2470',
 };

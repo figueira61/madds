@@ -3,7 +3,7 @@ import { GAME_W, GAME_H } from '../config';
 import { Menu, text } from '../ui/Menu';
 import { synth } from '../audio/Synth';
 
-/** End of Phase 1: Madds and Bekas walk together into the sunset. */
+/** End of the worlds made so far: Madds and Bekas walk together into the sunset. */
 export class ContinuaScene extends Phaser.Scene {
   private menu?: Menu;
 
@@ -11,7 +11,7 @@ export class ContinuaScene extends Phaser.Scene {
     super('Continua');
   }
 
-  create(): void {
+  create(data?: { subtitle?: string }): void {
     this.menu = undefined;
     const g = this.add.graphics();
     g.fillGradientStyle(0xff9a5a, 0xff9a5a, 0x6a3a7a, 0x6a3a7a, 1).fillRect(0, 0, GAME_W, GAME_H);
@@ -27,7 +27,7 @@ export class ContinuaScene extends Phaser.Scene {
     } });
 
     const title = text(this, GAME_W / 2, 40, 'Continua…', 28, '#ffffff').setAlpha(0);
-    const sub = text(this, GAME_W / 2, 72, 'A aventura continua no Mundo 2: Cidade de Blocos', 10, '#ffffff').setAlpha(0);
+    const sub = text(this, GAME_W / 2, 72, data?.subtitle ?? 'A aventura continua no Mundo 3: Estádio & Circuito', 10, '#ffffff').setAlpha(0);
     this.tweens.add({ targets: [title, sub], alpha: 1, delay: 1200, duration: 1200 });
     synth.playMusic('continua');
     this.time.delayedCall(2500, () => {

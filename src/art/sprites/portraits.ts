@@ -102,6 +102,31 @@ function hunter(): string[] {
   return g.rows();
 }
 
+function robot(): string[] {
+  const g = new Grid(48, 48);
+  g.rect(8, 38, 32, 10, 'x').rect(8, 38, 32, 1, 'R'); // red brick shoulders
+  g.rect(10, 8, 28, 28, 'm').rect(10, 8, 28, 2, 'W').rect(10, 34, 28, 2, 'M'); // head
+  for (let x = 12; x + 4 <= 38; x += 7) g.rect(x, 5, 4, 3, 'W'); // studs
+  g.rect(14, 16, 7, 6, 'x').rect(27, 16, 7, 6, 'x').rect(15, 17, 2, 2, 'R').rect(28, 17, 2, 2, 'R'); // eyes
+  g.rect(16, 27, 16, 3, 'k');
+  for (let x = 17; x < 32; x += 3) g.rect(x, 27, 1, 3, 'g'); // grille mouth
+  g.rect(22, 0, 4, 5, 'M').ellipse(24, 1, 2, 1, 'x'); // antenna
+  return g.rows();
+}
+
+function collector(): string[] {
+  const g = new Grid(48, 48);
+  g.ellipse(24, 52, 22, 12, 'p').rect(20, 40, 8, 8, 'w').rect(23, 41, 2, 7, 'x'); // coat, shirt, tie
+  g.rect(19, 33, 10, 7, 'S').ellipse(24, 26, 11, 11, 's');
+  g.rect(16, 23, 6, 1, 'k').rect(27, 23, 6, 1, 'k'); // eyebrows raised
+  g.rect(18, 25, 3, 2, 'k').ellipse(30, 26, 3, 3, 'l').ellipse(30, 26, 2, 2, 'G').set(30, 26, 'k'); // eye + monocle
+  g.rect(32, 28, 1, 8, 'l');
+  g.rect(17, 31, 14, 2, 'K').set(16, 30, 'K').set(15, 29, 'K').set(31, 30, 'K').set(32, 29, 'K'); // curled moustache
+  g.rect(20, 35, 8, 1, 'X'); // smirk
+  g.rect(13, 13, 22, 3, 'P').rect(16, 0, 16, 13, 'P').rect(16, 10, 16, 2, 'l'); // top hat with gold band
+  return g.rows();
+}
+
 export const PORTRAIT_FRAME = {
   'madds-neutral': 0,
   'madds-determined': 1,
@@ -111,6 +136,8 @@ export const PORTRAIT_FRAME = {
   'madds-hands': 5,
   'bekas-happy': 6,
   hunter: 7,
+  robot: 8,
+  collector: 9,
 } as const;
 
 export type PortraitName = keyof typeof PORTRAIT_FRAME;
@@ -119,5 +146,5 @@ export const PORTRAITS_SHEET: SheetDef = {
   key: 'portraits',
   frameW: 48,
   frameH: 48,
-  frames: [madds('neutral'), madds('determined'), madds('surprised'), madds('happy'), madds('sad'), madds('hands'), bekas(), hunter()],
+  frames: [madds('neutral'), madds('determined'), madds('surprised'), madds('happy'), madds('sad'), madds('hands'), bekas(), hunter(), robot(), collector()],
 };

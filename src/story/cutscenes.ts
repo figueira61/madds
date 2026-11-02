@@ -1,17 +1,19 @@
 import type { PortraitName } from '../art/sprites/portraits';
 
 export interface CutsceneLine {
-  speaker: 'madds' | 'bekas' | 'hunter' | 'narrador';
+  speaker: 'madds' | 'bekas' | 'hunter' | 'robot' | 'collector' | 'narrador';
   portrait?: PortraitName;
   text: string;
 }
 
-export type CutsceneId = 'w1-intro' | 'w1-preboss' | 'w1-reunion';
+export type CutsceneId = 'w1-intro' | 'w1-preboss' | 'w1-reunion' | 'w2-intro' | 'w2-preboss' | 'w2-outro';
 
 export const SPEAKER_NAME: Record<CutsceneLine['speaker'], string> = {
   madds: 'Madds',
   bekas: 'Bekas',
   hunter: 'Caçador',
+  robot: 'Robô de Blocos',
+  collector: 'O Colecionador',
   narrador: '',
 };
 
@@ -37,5 +39,26 @@ export const CUTSCENES: Record<CutsceneId, CutsceneLine[]> = {
     { speaker: 'madds', portrait: 'madds-happy', text: 'Estás bem! Que saudades que eu tive tuas...' },
     { speaker: 'hunter', portrait: 'hunter', text: 'Isto não fica assim! O Colecionador não vai gostar nada disto!' },
     { speaker: 'madds', portrait: 'madds-determined', text: 'Ele que se prepare. Agora somos duas.' },
+  ],
+  'w2-intro': [
+    { speaker: 'narrador', text: 'A Madds e a Bekas seguem o rasto do Caçador até à Cidade de Blocos.' },
+    { speaker: 'madds', portrait: 'madds-surprised', text: 'OMG! A cidade está toda desmontada...' },
+    { speaker: 'narrador', text: 'As torres, as pontes, os parques: alguém levou as peças, uma a uma.' },
+    { speaker: 'bekas', portrait: 'bekas-happy', text: 'Snif, snif... Ão!' },
+    { speaker: 'madds', portrait: 'madds-determined', text: 'Farejaste alguma coisa? Mostra o caminho, Bekas. Vamos montar isto outra vez!' },
+  ],
+  'w2-preboss': [
+    { speaker: 'narrador', text: 'No centro da fábrica, as peças roubadas mexem-se sozinhas... e levantam-se.' },
+    { speaker: 'robot', portrait: 'robot', text: 'PEÇAS. CONFISCADAS. POR. ORDEM. DO. COLECIONADOR.' },
+    { speaker: 'madds', portrait: 'madds-hands', text: 'Ele construiu um robô com as peças da cidade inteira?!' },
+    { speaker: 'madds', portrait: 'madds-determined', text: 'Então vamos desmontá-lo peça a peça. Bekas, comigo!' },
+  ],
+  'w2-outro': [
+    { speaker: 'narrador', text: 'As peças do robô voltam para os seus lugares. A cidade monta-se outra vez, bloco a bloco.' },
+    { speaker: 'madds', portrait: 'madds-happy', text: 'WOW! Olha, Bekas, as torres estão de pé outra vez!' },
+    { speaker: 'collector', portrait: 'collector', text: 'Bravo, bravo... Uma rapariga e uma cadela a estragar a minha coleção.' },
+    { speaker: 'collector', portrait: 'collector', text: 'Mas os animais e os blocos eram só o aperitivo. No Estádio guardo a peça mais rara de todas: o grande troféu.' },
+    { speaker: 'collector', portrait: 'collector', text: 'Vem buscá-lo, se fores capaz!' },
+    { speaker: 'madds', portrait: 'madds-determined', text: 'Um estádio? Então vais jogar no MEU campo. Vamos, Bekas!' },
   ],
 };

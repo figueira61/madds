@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_W, GAME_H } from '../config';
-import { LEVELS, nextLevel } from '../levels/registry';
+import { LEVELS, nextLevel, firstLevelOf } from '../levels/registry';
 import { Menu, text } from '../ui/Menu';
 import { synth } from '../audio/Synth';
 import { gameState } from '../gameState';
@@ -51,7 +51,9 @@ export class ResultsScene extends Phaser.Scene {
     const items = [];
     if (outro && firstClear) {
       // The story ending (the reunion) must not be skippable by picking another option.
-      items.push({ label: 'Continuar', action: () => this.scene.start('Cutscene', { id: outro, next: { scene: 'Continua' } }) });
+      // After a world's boss: on to the map if the next world exists, otherwise the "to be continued" screen.
+      const after = level && firstLevelOf(level.world + 1) && LEVELS[firstLevelOf(level.world + 1)!] ? 'WorldMap' : 'Continua';
+      items.push({ label: 'Continuar', action: () => this.scene.start('Cutscene', { id: outro, next: { scene: after } }) });
     } else {
       if (next && LEVELS[next]) items.push({ label: 'Próximo nível', action: () => enterLevel(this, next) });
       items.push({ label: 'Mapa', action: () => this.scene.start('WorldMap') });
