@@ -1,4 +1,4 @@
-import { SOLID_TILES, type LevelData, type TileChar } from './format';
+import { LATENT_TILES, SOLID_TILES, type LevelData, type TileChar } from './format';
 
 /** A full jump rises ~3.7 tiles, so a surface may be at most this many rows above the one below it. */
 const MAX_STEP_UP_ROWS = 3;
@@ -12,7 +12,7 @@ interface Surface {
   y: number;
 }
 
-const STANDABLE = new Set<string>([...SOLID_TILES, '=']);
+const STANDABLE = new Set<string>([...SOLID_TILES, ...LATENT_TILES, '=']);
 
 function surfaces(l: LevelData): Surface[] {
   const out: Surface[] = [];

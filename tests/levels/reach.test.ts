@@ -29,4 +29,11 @@ describe('unreachable', () => {
       expect(unreachable(l)).toEqual([]);
     });
   }
+
+  it('peças fantasma e plataformas escondidas contam como apoio', () => {
+    for (const t of ['g', 'h']) {
+      const rows = ['...===....', '..........', '..........', `...${t}${t}${t}....`, '..........', '..........', '..........', '..........', '##########'];
+      expect(unreachable(level(rows, [{ type: 'start', x: 0, y: 7 }]))).toEqual([]);
+    }
+  });
 });
