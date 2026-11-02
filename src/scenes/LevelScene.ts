@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { TILE } from '../config';
 import { LEVELS } from '../levels/registry';
 import type { LevelData, LevelObject } from '../levels/format';
-import { buildTilemap, animateWater, type BuiltMap } from '../levels/tilemap';
+import { buildTilemap, animateWater, animateConveyors, type BuiltMap } from '../levels/tilemap';
 import { TILE_FRAME } from '../art/sprites/tiles';
-import { drawForestBackground } from '../art/background';
+import { drawBackground } from '../art/background';
 import { Madds } from '../entities/Madds';
 import { Ball } from '../entities/Ball';
 import { Bekas } from '../entities/Bekas';
@@ -74,6 +74,7 @@ export class LevelScene extends Phaser.Scene {
   private respawning = false;
   private lookAhead = 0;
   private waterPhase: 0 | 1 = 0;
+  private beltPhase: 0 | 1 = 0;
 
   constructor() {
     super('Level');
@@ -100,7 +101,7 @@ export class LevelScene extends Phaser.Scene {
   create(): void {
     const opts = gameState.save.options;
     this.built = buildTilemap(this, this.level);
-    drawForestBackground(this, this.built.widthPx, this.built.heightPx);
+    drawBackground(this, this.level.world, this.built.widthPx, this.built.heightPx);
     this.physics.world.setBounds(0, 0, this.built.widthPx, this.built.heightPx + 200);
 
     const start = this.level.objects.find((o) => o.type === 'start')!;
@@ -155,6 +156,7 @@ export class LevelScene extends Phaser.Scene {
     }
 
     this.time.addEvent({ delay: 400, loop: true, callback: () => animateWater(this.built.layer, (this.waterPhase = this.waterPhase === 0 ? 1 : 0)) });
+    this.time.addEvent({ delay: 150, loop: true, callback: () => animateConveyors(this.built.layer, (this.beltPhase = this.beltPhase === 0 ? 1 : 0)) });
     synth.playMusic(this.level.music);
     this.scene.launch('Hud', { level: this });
     this.events.once('shutdown', () => {

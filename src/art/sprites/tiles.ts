@@ -84,6 +84,45 @@ const softDirt = dirt(23, 'u', 't', 'y');
 
 const waterDeep = Array.from({ length: 16 }, (_, i) => (i % 6 === 3 ? 'AAAaAAAAAAAaAAAA' : 'AAAAAAAAAAAAAAAA'));
 
+// --- World 2: bricks are drawn in light greys and tinted per brick by the tilemap. ---
+const STUDS = ['..wwww....wwww..', '.wWWWWg..wWWWWg.', '.gggggg..gggggg.'];
+const brickBody = (rows: number) => ['wwwwwwwwwwwwwwwW', ...Array.from({ length: rows - 2 }, (_, i) => (i === Math.floor(rows / 2) - 1 ? 'WWWWWWWgWWWWWWWg' : 'WWWWWWWWWWWWWWWg')), 'gggggggggggggggg'];
+const brickTop = [...STUDS, ...brickBody(13)];
+const brick = brickBody(16);
+const brickPlatform = [...STUDS, ...brickBody(6), ...Array.from({ length: 7 }, () => '................')];
+const hidden = [...STUDS.map((r) => r.replace(/[wWg]/g, 'c')), 'GGGGGGGGGGGGGGGc', 'GlGGGGGGcGGGGlGc', 'GGGGlGGGcGGGGGGc', 'GGGGGGGGcGGlGGGc', 'GGGGGGGGGGGGGGGc', 'cccccccccccccccc', ...Array.from({ length: 7 }, () => '................')];
+const ghost = (() => {
+  const rows = Array.from({ length: 16 }, () => Array(16).fill('.'));
+  for (let i = 0; i < 16; i += 2) {
+    rows[3][i] = 'w'; rows[15][i] = 'w'; rows[i + 1 < 16 ? i + 1 : 15][0] = 'w'; rows[i + 1 < 16 ? i + 1 : 15][15] = 'w';
+  }
+  for (const x of [2, 4, 10, 12]) rows[0][x] = 'w';
+  return rows.map((r) => r.join(''));
+})();
+/** Conveyor belt: chevrons point the way it pushes; phase shifts them 4 px for the animation. */
+function conveyor(dir: -1 | 1, phase: 0 | 1): string[] {
+  const chevron = (row: number) => Array.from({ length: 16 }, (_, x) => {
+    const p = (((dir > 0 ? x : 15 - x) - phase * 4 - Math.abs(row - 2)) % 8 + 8) % 8;
+    return p === 0 || p === 1 ? 'y' : 'K';
+  }).join('');
+  return [
+    'kkkkkkkkkkkkkkkk',
+    chevron(1), chevron(2), chevron(3),
+    'kkkkkkkkkkkkkkkk',
+    'MmmmmmmmmmmmmmmM',
+    'MmkkmmmmmmmmkkmM',
+    'MkKKkmmmmmmkKKkM',
+    'MkKKkmmmmmmkKKkM',
+    'MmkkmmmmmmmmkkmM',
+    'MmmmmmmmmmmmmmmM',
+    'MMMMMMMMMMMMMMMM',
+    'MyykkyykkyykkyyM',
+    'MkyykkyykkyykkyM',
+    'MMMMMMMMMMMMMMMM',
+    'kkkkkkkkkkkkkkkk',
+  ];
+}
+
 export const TILE_FRAME = {
   groundTop: 0,
   ground: 1,
@@ -94,11 +133,23 @@ export const TILE_FRAME = {
   reinforced: 6,
   softDirt: 7,
   waterDeep: 8,
+  brickTop: 9,
+  brick: 10,
+  conveyorLA: 11,
+  conveyorLB: 12,
+  conveyorRA: 13,
+  conveyorRB: 14,
+  ghost: 15,
+  hidden: 16,
+  brickPlatform: 17,
 } as const;
 
 export const TILES_SHEET: SheetDef = {
   key: 'tiles',
   frameW: 16,
   frameH: 16,
-  frames: [groundTop, ground, platform, spikes, water(0), water(1), reinforced, softDirt, waterDeep],
+  frames: [
+    groundTop, ground, platform, spikes, water(0), water(1), reinforced, softDirt, waterDeep,
+    brickTop, brick, conveyor(-1, 0), conveyor(-1, 1), conveyor(1, 0), conveyor(1, 1), ghost, hidden, brickPlatform,
+  ],
 };
