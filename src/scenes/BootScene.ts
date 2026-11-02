@@ -9,13 +9,17 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     registerAllSheets(this);
     this.cameras.main.setBackgroundColor('#6a8caf');
-    const anims = ['idle', 'run', 'jump', 'fall', 'wall', 'kick', 'hurt', 'photo', 'cookie', 'hug'];
-    anims.forEach((a, i) => this.add.sprite(20 + i * 22, 30, 'madds').setScale(1).play(`madds-${a}`));
-    ['idle', 'run', 'jump', 'wall', 'kick', 'hurt'].forEach((a, i) => this.add.sprite(20 + i * 22, 62, 'madds-adqc').play(`madds-adqc-${a}`));
-    this.add.sprite(160, 62, 'transform').play('transform-play').on('animationcomplete', (_: unknown, __: unknown, s: Phaser.GameObjects.Sprite) => s.play('transform-play'));
-    for (let i = 0; i < 8; i++) this.add.image(28 + i * 54, 130, 'portraits', i);
-    this.add.sprite(60, 220, 'madds').setScale(3).play('madds-idle');
-    this.add.sprite(130, 220, 'madds-adqc').setScale(3).play('madds-adqc-idle');
-    this.add.image(200, 220, 'madds-adqc', 7).setScale(3);
+    const row = (y: number, items: [string, string | number][]) =>
+      items.forEach(([key, a], i) => {
+        const s = this.add.sprite(24 + i * 34, y, key);
+        if (typeof a === 'string') s.play(`${key}-${a}`);
+        else s.setFrame(a);
+        s.setScale(2);
+      });
+    row(30, [['bekas', 'idle'], ['bekas', 'run'], ['bekas', 'sit'], ['bekas', 'paw'], ['bekas', 'eat'], ['bekas', 'wag'], ['bekas', 'bark'], ['bekas', 'jump'], ['bekas', 'dig']]);
+    row(80, [['beetle', 'walk'], ['beetle', 'dead'], ['bird', 'fly'], ['bird', 'dead'], ['net', 'spin'], ['animals', 'rabbit-cheer'], ['animals', 'squirrel-cheer'], ['animals', 'fox-cheer']]);
+    row(140, [['hunter', 'idle'], ['hunter', 'walk'], ['hunter', 3], ['hunter', 4], ['hunter', 'jump'], ['hunter', 'hurt'], ['hunter', 'defeated']]);
+    row(210, [['ball', 'spin'], ['golden-ball', 'shine'], ['cromo', 'shine'], ['cage', 0], ['cage', 1], ['checkpoint', 0], ['checkpoint', 1], ['exit', 0], ['cookie', 0], ['photo', 0], ['heart-particle', 0], ['bekas-sign', 0], ['heart', 0], ['heart', 1]]);
+    this.add.image(420, 250, 'log').setScale(1);
   }
 }
