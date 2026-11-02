@@ -35,7 +35,7 @@ export class HudScene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) this.hearts.push(this.add.image(10 + i * 13, 12, 'heart', 0));
     this.bar = this.add.graphics();
     this.barLabel = text(this, BAR_X + BAR_W / 2, BAR_Y + BAR_H + 7, 'A.D.Q.C.', 7, '#ffffff');
-    this.cromo = this.add.sprite(GAME_W - 14, 13, 'cromo', 0).setTint(0x444444).setAlpha(0.6);
+    this.cromo = this.add.sprite(GAME_W - 46, 13, 'cromo', 0).setTint(0x444444).setAlpha(0.6);
     this.bossBar = this.add.graphics();
     this.bossName = text(this, GAME_W / 2, 30, '', 8).setVisible(false);
 

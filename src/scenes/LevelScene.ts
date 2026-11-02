@@ -41,6 +41,9 @@ export function tileFoot(o: { x: number; y: number }): { x: number; y: number } 
   return { x: o.x * TILE + TILE / 2, y: (o.y + 1) * TILE };
 }
 
+/** Extra earth shown under the level on touch devices, where the buttons cover the bottom of the screen. */
+const TOUCH_FLOOR_PX = 52;
+
 export class LevelScene extends Phaser.Scene {
   level!: LevelData;
   built!: BuiltMap;
@@ -137,8 +140,11 @@ export class LevelScene extends Phaser.Scene {
     this.level.objects.forEach((o, i) => this.spawnObject(o, i));
     this.animalsTotal = this.level.objects.filter((o) => o.type === 'cage').length;
 
+    // Touch: let the camera go below the level so the ground sits above the on-screen buttons.
+    const floor = this.controls.hasTouch ? TOUCH_FLOOR_PX : 0;
+    if (floor) this.add.rectangle(0, this.built.heightPx, this.built.widthPx, floor, 0x3b2616).setOrigin(0).setDepth(-1);
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, this.built.widthPx, this.built.heightPx);
+    cam.setBounds(0, 0, this.built.widthPx, this.built.heightPx + floor);
     cam.startFollow(this.madds, true, 0.15, 0.15);
     cam.setDeadzone(48, 32);
     cam.setRoundPixels(true);
@@ -490,11 +496,29 @@ export class LevelScene extends Phaser.Scene {
 
   private onBallHitTile(tile: Phaser.Tilemaps.Tile): void {
     if (this.ball.powered && tile.index === TILE_FRAME.reinforced) {
-      this.built.layer.removeTileAt(tile.x, tile.y);
+      // The whole wall comes down at once, so one powered kick always opens a walkable gap.
+      const layer = this.built.layer;
+      const queue = [tile];
+      while (queue.length) {
+        const t = queue.pop()!;
+        if (t.index !== TILE_FRAME.reinforced) continue;
+        this.burst(t.getCenterX(), t.getCenterY(), 4, 8);
+        layer.removeTileAt(t.x, t.y);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const n = layer.getTileAt(t.x + dx, t.y + dy);
+          if (n) queue.push(n);
+        }
+      }
       synth.playSfx('break');
       this.cameras.main.shake(80, 0.004);
-      this.burst(tile.getCenterX(), tile.getCenterY(), 4, 8);
       return;
+    }
+    if (tile.index === TILE_FRAME.reinforced) {
+      // Hint: a normal kick only chips it; the blue flash points to the A.D.Q.C. kick.
+      synth.playSfx('clink');
+      this.burst(tile.getCenterX(), tile.getCenterY(), 4, 3);
+      tile.tint = 0x9fc4ff;
+      this.time.delayedCall(250, () => (tile.tint = 0xffffff));
     }
     this.ball.onBounce();
   }

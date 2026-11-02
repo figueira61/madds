@@ -24,6 +24,10 @@ export class InputManager {
     this.touch = opts.touch !== false && isTouchDevice() ? new TouchControls(scene, touchLayout(GAME_W, GAME_H, opts.touchScale, opts.touchOffsetX)) : null;
   }
 
+  get hasTouch(): boolean {
+    return this.touch !== null;
+  }
+
   setVisible(a: 'bekas' | 'super', visible: boolean): void {
     this.touch?.setVisible(a, visible);
   }

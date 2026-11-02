@@ -2,7 +2,7 @@ import type { Wave } from './notes';
 
 export type SfxName =
   | 'jump' | 'kick' | 'bounce' | 'hurt' | 'enemy' | 'animal' | 'golden' | 'cromo' | 'bark'
-  | 'adqc' | 'goal' | 'checkpoint' | 'power-full' | 'select' | 'break' | 'fall';
+  | 'adqc' | 'goal' | 'checkpoint' | 'power-full' | 'select' | 'break' | 'clink' | 'fall';
 
 /** One sweep: frequency glides from `from` to `to` over `ms`, starting `at` ms after the trigger. */
 export interface SfxStep {
@@ -33,5 +33,6 @@ export const SFX: Record<SfxName, SfxStep[]> = {
   'power-full': arp('square', [1047, 1319, 1047, 1319, 1568], 50, 0.09),
   select: [{ wave: 'square', from: 880, to: 880, ms: 40, vol: 0.08 }],
   break: [{ wave: 'noise', from: 1200, to: 200, ms: 260, vol: 0.25 }],
+  clink: [{ wave: 'square', from: 1600, to: 1500, ms: 45, vol: 0.07 }, { wave: 'square', from: 2100, to: 2000, ms: 60, vol: 0.05, at: 40 }],
   fall: [{ wave: 'triangle', from: 700, to: 90, ms: 450, vol: 0.2 }],
 };

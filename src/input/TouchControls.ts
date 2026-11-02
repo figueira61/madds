@@ -34,8 +34,8 @@ export class TouchControls {
     for (const [name, r] of Object.entries(this.visibleLayout()) as [TouchButton, Rect][]) {
       const down = this.pressed.has(name);
       const glow = name === 'super' ? 0.25 + 0.2 * Math.sin(time / 150) : 0;
-      g.fillStyle(name === 'super' ? 0x2f6fe0 : 0xffffff, (down ? 0.45 : 0.22) + glow);
-      g.lineStyle(2, 0xffffff, down ? 0.9 : 0.5);
+      g.fillStyle(name === 'super' ? 0x2f6fe0 : 0xffffff, (down ? 0.35 : 0.1) + glow);
+      g.lineStyle(2, 0xffffff, down ? 0.8 : 0.35);
       const cx = r.x + r.w / 2;
       const cy = r.y + r.h / 2;
       if (name === 'super' || name === 'pause') {
@@ -49,7 +49,7 @@ export class TouchControls {
 
   private icon(g: Phaser.GameObjects.Graphics, name: TouchButton, cx: number, cy: number, size: number): void {
     const s = size * 0.22;
-    g.fillStyle(0xffffff, 0.9);
+    g.fillStyle(0xffffff, 0.6);
     switch (name) {
       case 'left':
         g.fillTriangle(cx - s, cy, cx + s * 0.7, cy - s, cx + s * 0.7, cy + s);
