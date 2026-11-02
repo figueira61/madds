@@ -54,12 +54,14 @@ export class TitleScene extends Phaser.Scene {
     synth.playMusic('title');
     const save = gameState.save;
     const progress = hasProgress(save);
-    this.menu = new Menu(this, GAME_W / 2, 124, [
+    // Compact spacing so up to five items stay above Madds and Bekas.
+    this.menu = new Menu(this, GAME_W / 2, 112, [
       { label: 'Continuar', action: () => this.scene.start('WorldMap'), enabled: progress },
       { label: 'Novo jogo', action: () => (progress ? this.confirmNewGame() : this.newGame()) },
       { label: 'Álbum', action: () => this.scene.start('Album'), enabled: progress },
+      ...(save.completed.includes('3-boss') ? [{ label: 'Créditos', action: () => this.scene.start('Credits') }] : []),
       { label: 'Opções', action: () => this.openOptions() },
-    ]);
+    ], 17, 13);
   }
 
   private confirmNewGame(): void {

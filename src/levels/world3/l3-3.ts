@@ -24,6 +24,8 @@ const g = new Grid(30, 80)
   .rect(15, 66, 8, 1, '=')
   .rect(20, 63, 8, 1, '=')
   .rect(15, 60, 8, 1, '=')
+  // safety net: a missed jump on the left side lands here instead of back behind the gate
+  .rect(1, 59, 13, 1, '=')
   // the stands: left and right in turn
   .rect(2, 57, 11, 1, '=')
   .rect(15, 54, 13, 1, '=')

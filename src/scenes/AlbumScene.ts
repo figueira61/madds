@@ -15,6 +15,8 @@ const COLS = 6;
 export class AlbumScene extends Phaser.Scene {
   private menu!: Menu;
   private overlay: Phaser.GameObjects.Container | null = null;
+  /** The key that closed the message must not also press the menu item under it. */
+  private menuQuietUntil = 0;
 
   constructor() {
     super('Album');
@@ -40,7 +42,7 @@ export class AlbumScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (!this.overlay) this.menu.update();
+    if (!this.overlay && this.time.now >= this.menuQuietUntil) this.menu.update();
   }
 
   private card(x: number, y: number, id: string, owned: boolean): void {
@@ -61,13 +63,16 @@ export class AlbumScene extends Phaser.Scene {
   }
 
   private showSecret(): void {
-    const bg = this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W - 40, GAME_H - 40, 0x10121c, 0.96).setStrokeStyle(2, 0xffd34a);
+    if (this.overlay) return;
+    // Full-screen and interactive, so clicks never reach the menu underneath.
+    const bg = this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x10121c, 0.96).setStrokeStyle(2, 0xffd34a).setInteractive();
     const msg = text(this, GAME_W / 2, GAME_H / 2 - 10, SECRET_MESSAGE, 11, '#ffffff').setWordWrapWidth(GAME_W - 80).setAlign('center');
     const close = text(this, GAME_W / 2, GAME_H - 36, 'Fechar', 11, '#ffd34a').setInteractive({ useHandCursor: true });
     this.overlay = this.add.container(0, 0, [bg, msg, close]).setDepth(200);
     const shut = () => {
       this.overlay?.destroy();
       this.overlay = null;
+      this.menuQuietUntil = this.time.now + 250;
       this.input.keyboard?.off('keydown', shut);
     };
     close.on('pointerdown', shut);

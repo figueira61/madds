@@ -22,7 +22,7 @@ export class Car extends Phaser.Physics.Arcade.Sprite {
 }
 
 /**
- * One 'car' object: while Madds is within ~25 tiles before it, a car comes every `every` ms,
+ * One 'car' object: while Madds is within ~25 tiles before it (and alive), a car comes every `every` ms,
  * announced by a "!" sign at the right edge of the screen 600 ms before.
  */
 export class CarLane {
@@ -41,20 +41,20 @@ export class CarLane {
     this.nextMs = delayMs;
   }
 
-  update(dtMs: number, maddsX: number): void {
-    const active = maddsX > this.x - 400 && maddsX < this.x;
+  update(dtMs: number, maddsX: number, paused = false): void {
+    const active = !paused && maddsX > this.x - 400 && maddsX < this.x;
     if (!active) return;
     this.nextMs -= dtMs;
     if (this.nextMs > 0) return;
     this.nextMs = this.everyMs;
     const cam = this.scene.cameras.main;
-    const fromX = Math.min(this.x, cam.scrollX + GAME_W + 40);
     const sign = this.scene.add.image(cam.scrollX + GAME_W - 12, this.groundY - 20, 'car-warn').setDepth(20);
     this.scene.tweens.add({ targets: sign, alpha: 0.2, yoyo: true, repeat: 2, duration: WARN_MS / 6 });
     synth.playSfx('select');
     this.scene.time.delayedCall(WARN_MS, () => {
       sign.destroy();
-      this.spawn(new Car(this.scene, fromX, this.groundY, this.speed, this.count++));
+      // Always from off-screen on the right (where the sign was), measured when it actually comes.
+      this.spawn(new Car(this.scene, cam.scrollX + GAME_W + 40, this.groundY, this.speed, this.count++));
     });
   }
 }

@@ -109,6 +109,8 @@ export class LevelScene extends Phaser.Scene {
   private goalBox: { x: number; y: number; w: number; h: number } | null = null;
   private goals = new GoalTracker();
   private flightId = 0;
+  /** Where Madds kicked the current ball from: goals only count when shot from in front of the goal. */
+  private kickFromX = 0;
 
   constructor() {
     super('Level');
@@ -418,11 +420,12 @@ export class LevelScene extends Phaser.Scene {
       if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) {
         this.madds.playKick();
         this.flightId += 1;
+        this.kickFromX = this.madds.x;
       }
     }
     this.rideLogs();
     this.updatePuzzles(delta);
-    for (const lane of this.lanes) lane.update(delta, this.madds.x);
+    for (const lane of this.lanes) lane.update(delta, this.madds.x, this.respawning);
     this.checkGoal();
     this.ball.update(delta);
     this.updateCamera(delta);
@@ -686,6 +689,7 @@ export class LevelScene extends Phaser.Scene {
   private checkGoal(): void {
     const boss = this.boss;
     if (!(boss instanceof Collector) || !boss.keeping || !this.goalBox || !this.ball.inFlight) return;
+    if (this.tweens.isTweening(boss) || this.kickFromX >= this.goalBox.x - 8) return;
     boss.keeperSlow = this.power.active;
     const b = this.ball.arcadeBody;
     if (!isGoal({ x: b.left, y: b.top, w: b.width, h: b.height }, this.goalBox)) return;
