@@ -54,6 +54,7 @@ export function tileFoot(o: { x: number; y: number }): { x: number; y: number } 
 const TOUCH_FLOOR_PX = 52;
 /** Conveyor belts push whoever stands on them at this speed (px/s). */
 const CONVEYOR_SPEED = 60;
+const MINION_SKIN: Record<number, 'beetle' | 'minifig' | 'racer'> = { 1: 'beetle', 2: 'minifig', 3: 'racer' };
 
 export class LevelScene extends Phaser.Scene {
   level!: LevelData;
@@ -216,6 +217,12 @@ export class LevelScene extends Phaser.Scene {
       case 'heli':
         this.addEnemy(new Bird(this, p.x, p.y - 8, Number(o.props?.range ?? 4) * TILE, 'heli'));
         break;
+      case 'racer':
+        this.addEnemy(new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), Number(o.props?.speed ?? 70), 'racer'));
+        break;
+      case 'drone':
+        this.addEnemy(new Bird(this, p.x, p.y - 8, Number(o.props?.range ?? 4) * TILE, 'drone'));
+        break;
       case 'cage': {
         const cage = new Cage(this, p.x, p.y, o.id ?? `cage-${index}`, Cage.speciesFor(index, o.props?.species));
         this.physics.add.overlap(this.ball, cage, () => {
@@ -266,7 +273,7 @@ export class LevelScene extends Phaser.Scene {
         break;
       }
       case 'checkpoint': {
-        const flag = this.physics.add.staticSprite(p.x, p.y - 12, 'checkpoint', 0);
+        const flag = this.physics.add.staticSprite(p.x, p.y - 12, this.level.world === 3 ? 'pit' : 'checkpoint', 0);
         this.physics.add.overlap(this.madds, flag, () => {
           if (this.checkpoints.reach(o.id ?? `${o.x},${o.y}`, p)) {
             flag.setFrame(1);
@@ -630,7 +637,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.minions.length >= 2) return;
     const p = Phaser.Utils.Array.GetRandom(this.minionSpawns);
     this.burst(p.x, p.y - 8, 4, 8);
-    const minion = new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), 40, this.level.world === 2 ? 'minifig' : 'beetle');
+    const minion = new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), 40, MINION_SKIN[this.level.world]);
     this.addEnemy(minion);
     this.minions.push(minion);
   }

@@ -10,12 +10,13 @@ export interface BuiltMap {
   heightPx: number;
 }
 
-const SOLID = new Set(['#', 'B', 'M', '<', '>']);
+const SOLID = new Set(['#', 'B', 'M', '<', '>', 'z']);
 const COLLIDING = [
   TILE_FRAME.ground, TILE_FRAME.groundTop, TILE_FRAME.reinforced, TILE_FRAME.softDirt,
   TILE_FRAME.brick, TILE_FRAME.brickTop, TILE_FRAME.conveyorLA, TILE_FRAME.conveyorLB, TILE_FRAME.conveyorRA, TILE_FRAME.conveyorRB,
+  TILE_FRAME.trackTop, TILE_FRAME.track, TILE_FRAME.boostA, TILE_FRAME.boostB,
 ];
-const ONE_WAY = new Set<number>([TILE_FRAME.platform, TILE_FRAME.brickPlatform, TILE_FRAME.hidden]);
+const ONE_WAY = new Set<number>([TILE_FRAME.platform, TILE_FRAME.brickPlatform, TILE_FRAME.hidden, TILE_FRAME.bleacher]);
 /** Brick colours, chosen per two-tile brick so neighbouring bricks differ. */
 const BRICK_TINTS = [0xff5a4a, 0xffd34a, 0x4a8cff, 0x5ccf5c, 0xff9a3a];
 const GHOST_ALPHA = 0.45;
@@ -29,12 +30,14 @@ export function brickTint(x: number, y: number): number {
 function frameFor(rows: string[], x: number, y: number, world: number): number {
   const above = y > 0 ? rows[y - 1][x] : '.';
   const city = world === 2;
+  const stadium = world === 3;
   switch (rows[y][x]) {
     case '#':
       if (city) return SOLID.has(above) ? TILE_FRAME.brick : TILE_FRAME.brickTop;
+      if (stadium) return SOLID.has(above) ? TILE_FRAME.track : TILE_FRAME.trackTop;
       return SOLID.has(above) ? TILE_FRAME.ground : TILE_FRAME.groundTop;
     case '=':
-      return city ? TILE_FRAME.brickPlatform : TILE_FRAME.platform;
+      return city ? TILE_FRAME.brickPlatform : stadium ? TILE_FRAME.bleacher : TILE_FRAME.platform;
     case '^':
       return TILE_FRAME.spikes;
     case '~':
@@ -49,6 +52,8 @@ function frameFor(rows: string[], x: number, y: number, world: number): number {
       return TILE_FRAME.conveyorRA;
     case 'g':
       return TILE_FRAME.ghost;
+    case 'z':
+      return TILE_FRAME.boostA;
     default:
       return -1;
   }
@@ -81,9 +86,10 @@ export function animateWater(layer: Phaser.Tilemaps.TilemapLayer, phase: 0 | 1):
   });
 }
 
-/** Moves the chevrons of every conveyor belt. */
+/** Moves the chevrons of every conveyor belt and boost pad. */
 export function animateConveyors(layer: Phaser.Tilemaps.TilemapLayer, phase: 0 | 1): void {
   layer.forEachTile((t) => {
+    if (t.index === TILE_FRAME.boostA || t.index === TILE_FRAME.boostB) t.index = phase === 0 ? TILE_FRAME.boostA : TILE_FRAME.boostB;
     if (t.index === TILE_FRAME.conveyorLA || t.index === TILE_FRAME.conveyorLB) t.index = phase === 0 ? TILE_FRAME.conveyorLA : TILE_FRAME.conveyorLB;
     else if (t.index === TILE_FRAME.conveyorRA || t.index === TILE_FRAME.conveyorRB) t.index = phase === 0 ? TILE_FRAME.conveyorRA : TILE_FRAME.conveyorRB;
   });
@@ -138,4 +144,8 @@ export function revealHidden(layer: Phaser.Tilemaps.TilemapLayer, rows: string[]
     }),
   );
   return n;
+}
+
+export function isBoost(t: Phaser.Tilemaps.Tile | null): boolean {
+  return !!t && (t.index === TILE_FRAME.boostA || t.index === TILE_FRAME.boostB);
 }

@@ -123,6 +123,38 @@ function conveyor(dir: -1 | 1, phase: 0 | 1): string[] {
   ];
 }
 
+// --- World 3: race track and stadium. ---
+const asphalt = (seed: number) => dirt(seed, 'K', 'k', 'M');
+const trackTop = (() => {
+  const rows = asphalt(31);
+  rows[0] = 'xxxxwwwwxxxxwwww';
+  rows[1] = 'xxxxwwwwxxxxwwww';
+  rows[2] = 'kkkkkkkkkkkkkkkk';
+  return rows;
+})();
+const track = asphalt(37);
+const bleacher = [
+  'cccccccccccccccc',
+  'bbbbbbbbbbbbbbbb',
+  'bbbbbbbbbbbbbbbb',
+  'BBBBBBBBBBBBBBBB',
+  'MMMMMMMMMMMMMMMM',
+  '.M............M.',
+  ...Array.from({ length: 10 }, () => '................'),
+];
+/** Boost pad: chevrons pointing right, shifted 4 px per phase. */
+function boostPad(phase: 0 | 1): string[] {
+  const rows = asphalt(41);
+  rows[0] = 'llllllllllllllll';
+  for (let y = 3; y < 13; y++) {
+    rows[y] = [...rows[y]].map((c, x) => {
+      const p = (((x - phase * 4 + Math.abs(y - 8)) % 8) + 8) % 8;
+      return p < 2 ? (y < 6 || y > 10 ? 'o' : 'y') : c;
+    }).join('');
+  }
+  return rows;
+}
+
 export const TILE_FRAME = {
   groundTop: 0,
   ground: 1,
@@ -142,6 +174,11 @@ export const TILE_FRAME = {
   ghost: 15,
   hidden: 16,
   brickPlatform: 17,
+  trackTop: 18,
+  track: 19,
+  bleacher: 20,
+  boostA: 21,
+  boostB: 22,
 } as const;
 
 export const TILES_SHEET: SheetDef = {
@@ -151,5 +188,6 @@ export const TILES_SHEET: SheetDef = {
   frames: [
     groundTop, ground, platform, spikes, water(0), water(1), reinforced, softDirt, waterDeep,
     brickTop, brick, conveyor(-1, 0), conveyor(-1, 1), conveyor(1, 0), conveyor(1, 1), ghost, hidden, brickPlatform,
+    trackTop, track, bleacher, boostPad(0), boostPad(1),
   ],
 };

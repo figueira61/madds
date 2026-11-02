@@ -13,8 +13,8 @@ function knockOut(e: Phaser.Physics.Arcade.Sprite, deadAnim: string): void {
   e.scene.tweens.add({ targets: e, y: e.y - 10, alpha: 0, duration: 600, ease: 'Quad.easeOut', onComplete: () => e.destroy() });
 }
 
-export type WalkerSkin = 'beetle' | 'minifig';
-export type FlyerSkin = 'bird' | 'heli';
+export type WalkerSkin = 'beetle' | 'minifig' | 'racer';
+export type FlyerSkin = 'bird' | 'heli' | 'drone';
 
 /** Clockwork beetle (World 1) or block figure (World 2): walks and turns around at walls and ledges. */
 export class Beetle extends Phaser.Physics.Arcade.Sprite implements Enemy {
