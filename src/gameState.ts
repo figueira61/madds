@@ -12,8 +12,7 @@ class GameState {
   }
 
   onLevelComplete(scene: Phaser.Scene, result: LevelResult, power: number): void {
-    console.info('level-complete', result, power);
-    scene.time.delayedCall(800, () => scene.scene.restart());
+    scene.time.delayedCall(600, () => scene.scene.start('Results', { result, power }));
   }
 }
 

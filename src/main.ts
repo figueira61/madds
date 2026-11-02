@@ -1,9 +1,15 @@
 import Phaser from 'phaser';
 import { GAME_W, GAME_H } from './config';
 import { BootScene } from './scenes/BootScene';
+import { TitleScene } from './scenes/TitleScene';
+import { WorldMapScene } from './scenes/WorldMapScene';
+import { CutsceneScene } from './scenes/CutsceneScene';
 import { LevelScene } from './scenes/LevelScene';
 import { HudScene } from './scenes/HudScene';
 import { PauseScene } from './scenes/PauseScene';
+import { OptionsScene } from './scenes/OptionsScene';
+import { ResultsScene } from './scenes/ResultsScene';
+import { ContinuaScene } from './scenes/ContinuaScene';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -16,7 +22,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 4, gamepad: true },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 }, debug: false } },
-  scene: [BootScene, LevelScene, HudScene, PauseScene],
+  scene: [BootScene, TitleScene, WorldMapScene, CutsceneScene, LevelScene, HudScene, PauseScene, OptionsScene, ResultsScene, ContinuaScene],
 });
 
 if (import.meta.env.DEV) (window as unknown as { __game: Phaser.Game }).__game = game;
