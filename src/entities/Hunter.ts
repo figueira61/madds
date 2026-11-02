@@ -22,7 +22,7 @@ const PHASES: Record<1 | 2 | 3, PhaseTuning> = {
 
 /** Projectile thrown in an arc (the Hunter's net, the Robot's brick); the scene destroys it on contact with Madds or the ground. */
 export class Net extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene: Phaser.Scene, x: number, y: number, vx: number, vy: number, texture: 'net' | 'brick-shot' = 'net') {
+  constructor(scene: Phaser.Scene, x: number, y: number, vx: number, vy: number, texture: 'net' | 'brick-shot' | 'trophy-shot' = 'net') {
     super(scene, x, y, texture, 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);

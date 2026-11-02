@@ -15,6 +15,9 @@ import { Bekas } from '../entities/Bekas';
 import { Hunter, type Net } from '../entities/Hunter';
 import { Robot, type Shockwave } from '../entities/Robot';
 import type { Boss } from '../entities/Boss';
+import { Collector } from '../entities/Collector';
+import { Car, CarLane } from '../entities/Car';
+import { isGoal, GoalTracker } from '../systems/goal';
 import { Beetle, Bird, type Enemy } from '../entities/enemies';
 import { Cage, LogPlatform, Pickup } from '../entities/props';
 import { InputManager } from '../input/InputManager';
@@ -101,6 +104,11 @@ export class LevelScene extends Phaser.Scene {
   private doors: Door[] = [];
   private presses: Press[] = [];
   private scents: Scent[] = [];
+  private lanes: CarLane[] = [];
+  private cars!: Phaser.Physics.Arcade.Group;
+  private goalBox: { x: number; y: number; w: number; h: number } | null = null;
+  private goals = new GoalTracker();
+  private flightId = 0;
 
   constructor() {
     super('Level');
@@ -133,6 +141,10 @@ export class LevelScene extends Phaser.Scene {
     this.doors = [];
     this.presses = [];
     this.scents = [];
+    this.lanes = [];
+    this.goalBox = null;
+    this.goals = new GoalTracker();
+    this.flightId = 0;
   }
 
   create(): void {
@@ -172,12 +184,23 @@ export class LevelScene extends Phaser.Scene {
       (n as Net).destroy();
       this.hurtMadds((n as Net).x);
     });
+    this.cars = this.physics.add.group();
+    this.cars.defaults = NO_GROUP_DEFAULTS;
+    this.physics.add.overlap(this.madds, this.cars, (_m, c) => this.hurtMadds((c as Car).x));
+    this.physics.add.overlap(this.ball, this.cars, () => this.ball.recall(), () => this.ball.inFlight);
     this.waves = this.physics.add.group();
     this.waves.defaults = NO_GROUP_DEFAULTS;
     this.physics.add.overlap(this.madds, this.waves, (_m, w) => this.hurtMadds((w as Shockwave).x));
     this.events.on('madds-hurt', () => (this.tookDamage = true));
     this.events.on('madds-died', () => (this.tookDamage = true));
 
+    const goal = this.level.objects.find((o) => o.type === 'goal');
+    if (goal) {
+      const w = Number(goal.props?.w ?? 2) * TILE;
+      const h = Number(goal.props?.h ?? 3) * TILE;
+      this.goalBox = { x: goal.x * TILE, y: (goal.y + 1) * TILE - h, w, h };
+      this.add.image(this.goalBox.x, this.goalBox.y, 'goal').setOrigin(0).setDepth(7).setDisplaySize(w, h);
+    }
     this.level.objects.forEach((o, i) => this.spawnObject(o, i));
     this.animalsTotal = this.level.objects.filter((o) => o.type === 'cage').length;
 
@@ -272,6 +295,12 @@ export class LevelScene extends Phaser.Scene {
         break;
       case 'boss-robot':
         this.spawnRobot(p.x, p.y);
+        break;
+      case 'boss-collector':
+        this.spawnCollector(p.x, p.y);
+        break;
+      case 'car':
+        this.lanes.push(new CarLane(this, p.x, p.y, Number(o.props?.every ?? 3000), Number(o.props?.speed ?? 260), Number(o.props?.delay ?? 0), (car) => this.cars.add(car)));
         break;
       case 'minion-spawn':
         this.minionSpawns.push(p);
@@ -386,10 +415,15 @@ export class LevelScene extends Phaser.Scene {
       this.madds.update(delta, this.controls.state, speedMul);
       this.bekas?.follow();
       this.updateIdleAnimations();
-      if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
+      if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) {
+        this.madds.playKick();
+        this.flightId += 1;
+      }
     }
     this.rideLogs();
     this.updatePuzzles(delta);
+    for (const lane of this.lanes) lane.update(delta, this.madds.x);
+    this.checkGoal();
     this.ball.update(delta);
     this.updateCamera(delta);
     if (this.level.autoscroll) this.updateAutoscroll(delta);
@@ -631,6 +665,43 @@ export class LevelScene extends Phaser.Scene {
     this.spawnBoss(new Hunter(this, x, y, this.madds, 3 * TILE, this.built.widthPx - 3 * TILE, (net) => this.nets.add(net)));
   }
 
+  private spawnCollector(x: number, y: number): void {
+    const goal = this.goalBox ?? { x: this.built.widthPx - 3 * TILE, y: y - 3 * TILE, w: 2 * TILE, h: 3 * TILE };
+    const boss = new Collector(this, x, y, this.madds, 3 * TILE, this.built.widthPx - 5 * TILE, goal, (shot) => this.nets.add(shot));
+    boss.once('boss-keeper', () => {
+      this.nets.clear(true, true);
+      this.events.emit('hud-hint', 'Ele foi para a baliza! Marca-lhe 3 golos!');
+    });
+    this.spawnBoss(boss);
+    // In goal he saves every shot that hits him.
+    this.physics.add.overlap(this.ball, boss, () => {
+      if (!boss.keeping) return;
+      synth.playSfx('clink');
+      this.events.emit('hud-hint', 'Defendeu! Remata rasteiro quando ele subir.');
+      this.ball.recall();
+    }, () => this.ball.inFlight);
+  }
+
+  /** Last phase of the final boss: a ball inside the goal mouth is a goal (one per kick). */
+  private checkGoal(): void {
+    const boss = this.boss;
+    if (!(boss instanceof Collector) || !boss.keeping || !this.goalBox || !this.ball.inFlight) return;
+    boss.keeperSlow = this.power.active;
+    const b = this.ball.arcadeBody;
+    if (!isGoal({ x: b.left, y: b.top, w: b.width, h: b.height }, this.goalBox)) return;
+    if (!this.goals.tryScore(this.flightId)) return;
+    this.ball.recall();
+    boss.conceded();
+    synth.playSfx('goal');
+    this.cameras.main.shake(200, 0.008);
+    this.cameras.main.flash(200, 255, 255, 255);
+    this.events.emit('hud-hint', this.goals.done ? 'GOLO! Ganhaste!' : `GOLO! ${this.goals.scored} de 3`);
+    if (this.bekas) {
+      this.bekas.play('bekas-celebrate', true);
+      synth.playSfx('bark');
+    }
+  }
+
   private spawnRobot(x: number, y: number): void {
     this.spawnBoss(new Robot(this, x, y, this.madds, 3 * TILE, this.built.widthPx - 3 * TILE, (shot) => this.nets.add(shot), (wave) => this.waves.add(wave)));
   }
@@ -670,6 +741,7 @@ export class LevelScene extends Phaser.Scene {
     this.minions.forEach((m) => m.alive && m.defeat());
     this.nets.clear(true, true);
     this.waves.clear(true, true);
+    this.cars.clear(true, true);
     if (!this.tookDamage) {
       this.gotCromo = true;
       this.events.emit('hud-cromo', true);
