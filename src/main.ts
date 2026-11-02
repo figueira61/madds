@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_W, GAME_H } from './config';
 import { BootScene } from './scenes/BootScene';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: GAME_W,
@@ -15,3 +15,5 @@ new Phaser.Game({
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 }, debug: false } },
   scene: [BootScene],
 });
+
+if (import.meta.env.DEV) (window as unknown as { __game: Phaser.Game }).__game = game;
