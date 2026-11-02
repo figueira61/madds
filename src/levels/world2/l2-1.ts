@@ -22,13 +22,14 @@ const g = new Grid(200, 17)
   .rect(83, 14, 1, 1, '#')
   .rect(79, 14, 1, 1, 'M')
   .rect(86, 0, 1, 12, '#')
-  // spikes with stepping platforms; crate on a ledge builds the Golden Ball bridge
+  // spikes with stepping platforms; a crate on a ledge builds the Golden Ball bridge high above
+  // them (row 7 leaves room to keep jumping between the platforms underneath)
   .rect(102, 14, 9, 1, '^')
   .rect(100, 12, 2, 1, '=')
   .rect(104, 12, 2, 1, '=')
   .rect(108, 12, 2, 1, '=')
   .rect(96, 10, 2, 1, '=')
-  .rect(99, 9, 10, 1, 'g')
+  .rect(99, 7, 10, 1, 'g')
   // crate 4 → stairs onto the second wall; the cromo alcove is carved into it
   .rect(136, 12, 3, 3, 'g')
   .rect(139, 9, 12, 5, '#')
@@ -61,8 +62,8 @@ export const L2_1: LevelData = {
     { type: 'plate', x: 81, y: 14, id: 'p1' },
     { type: 'door', x: 86, y: 14, props: { link: 'p1', h: 3 } },
     { type: 'checkpoint', x: 90, y: 14, id: 'c2' },
-    { type: 'brick-box', x: 97, y: 9, props: { bx: 99, by: 9, bw: 10, bh: 1 } },
-    { type: 'golden-ball', x: 104, y: 7 },
+    { type: 'brick-box', x: 97, y: 9, props: { bx: 99, by: 7, bw: 10, bh: 1 } },
+    { type: 'golden-ball', x: 104, y: 6 },
     { type: 'checkpoint', x: 114, y: 14, id: 'c3' },
     { type: 'minifig', x: 118, y: 14 },
     { type: 'heli', x: 124, y: 8, props: { range: 3 } },

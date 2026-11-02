@@ -3,7 +3,7 @@ import type { LevelData } from '../format';
 
 /*
  * 2-2 Fábrica de Peças (220×17). Conveyor belts (against, then towards spikes), two low press
- * corridors with staggered timings (the second over a belt pushing back), and two Bekas
+ * corridors with staggered timings (the second tighter, then a belt pushing back), and two Bekas
  * sections: a 1-tile hole high in a wall, and a tunnel under a block, each to a plate that opens
  * Madds' door. The cromo is up on hidden platforms that Bekas' nose reveals.
  */
@@ -14,20 +14,19 @@ const g = new Grid(220, 17)
   .rect(40, 0, 22, 12, '#')
   .rect(64, 15, 11, 1, '>')
   .rect(76, 14, 4, 1, '^')
-  // Bekas section 1: steps, ledge, the hole at (100, 8), door below
-  .rect(90, 13, 7, 2, '#')
-  .rect(92, 11, 5, 2, '#')
-  .rect(94, 9, 3, 2, '#')
-  .rect(97, 9, 3, 1, '=')
+  // Bekas section 1: one-way steps up to the 1-tile hole at (100, 8); Madds walks under them to the door
+  .rect(90, 13, 3, 1, '=')
+  .rect(93, 11, 3, 1, '=')
+  .rect(96, 9, 4, 1, '=')
   .rect(100, 0, 1, 8, '#')
   .rect(100, 9, 1, 3, '#')
-  // press corridor 2, over a belt pushing back
+  // press corridor 2 (tighter timings), then a belt pushing back
   .rect(112, 0, 20, 12, '#')
-  .rect(112, 15, 20, 1, '<')
+  .rect(132, 15, 7, 1, '<')
   // Bekas section 2: platforms up and over the block, tunnel underneath, door after it
-  .rect(141, 12, 2, 1, '=')
-  .rect(143, 9, 2, 1, '=')
-  .rect(141, 6, 2, 1, '=')
+  .rect(140, 12, 3, 1, '=')
+  .rect(142, 9, 3, 1, '=')
+  .rect(140, 6, 3, 1, '=')
   .rect(146, 4, 11, 10, '#')
   .rect(158, 0, 1, 12, '#')
   // scent room: one step, hidden platforms up to the cromo

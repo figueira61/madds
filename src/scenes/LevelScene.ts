@@ -449,6 +449,8 @@ export class LevelScene extends Phaser.Scene {
       if (!z || !z.contains(this.madds.x, this.madds.y - 4)) this.bekas.poof();
     }
     if (!this.controls.state.justPressed('bekas')) return;
+    // One press both ends the cuddle and switches.
+    if (this.bekas.inAffection) this.bekas.stopAffection();
     const canSwitch = active.onFloor && !this.madds.busy && !this.respawning && !this.frozen;
     if (!this.control.toggle(canSwitch)) return;
     const nowBekas = this.control.active === 'bekas';
