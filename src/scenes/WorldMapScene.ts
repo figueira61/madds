@@ -120,6 +120,16 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private drawIsland(g: Phaser.GameObjects.Graphics, world: WorldId): void {
+    if (world === 3) {
+      // Stadium: stands around, the race track, and the pitch in the middle.
+      g.fillStyle(0x4a4e66, 1).fillEllipse(200, 160, 370, 180);
+      g.fillStyle(0x3a3a48, 1).fillEllipse(200, 160, 330, 150);
+      g.fillStyle(0xff5a4a, 1).fillEllipse(200, 160, 300, 128);
+      g.fillStyle(0x3a3a48, 1).fillEllipse(200, 160, 292, 120);
+      g.fillStyle(0x3f8a3a, 1).fillEllipse(200, 160, 240, 90);
+      g.lineStyle(2, 0xffffff, 0.8).strokeEllipse(200, 160, 236, 86).lineBetween(200, 117, 200, 203).strokeCircle(200, 160, 14);
+      return;
+    }
     if (world === 2) {
       g.fillStyle(0x8a8f9c, 1).fillRoundedRect(25, 85, 350, 150, 18);
       g.fillStyle(0xd8dce6, 1).fillRoundedRect(30, 80, 340, 140, 16);
