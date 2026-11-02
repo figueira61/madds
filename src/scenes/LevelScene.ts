@@ -7,6 +7,7 @@ import { TILE_FRAME } from '../art/sprites/tiles';
 import { drawForestBackground } from '../art/background';
 import { Madds } from '../entities/Madds';
 import { Ball } from '../entities/Ball';
+import { Bekas } from '../entities/Bekas';
 import { Beetle, Bird, type Enemy } from '../entities/enemies';
 import { Cage, LogPlatform, Pickup } from '../entities/props';
 import { InputManager } from '../input/InputManager';
@@ -49,7 +50,9 @@ export class LevelScene extends Phaser.Scene {
   ball!: Ball;
   enemies!: Phaser.Physics.Arcade.Group;
   logs: LogPlatform[] = [];
+  bekas: Bekas | null = null;
   bekasJoined = false;
+  private photoIdle = false;
   elapsedMs = 0;
   gotCromo = false;
   animalsFreed = 0;
@@ -75,6 +78,8 @@ export class LevelScene extends Phaser.Scene {
     this.respawning = false;
     this.frozen = false;
     this.logs = [];
+    this.bekas = null;
+    this.photoIdle = false;
   }
 
   create(): void {
@@ -93,6 +98,11 @@ export class LevelScene extends Phaser.Scene {
     this.checkpoints = new Checkpoints(foot);
     this.power = new PowerMeter(gameState.save.power);
     this.idle = new IdleTimer();
+
+    if (this.bekasJoined) {
+      this.bekas = new Bekas(this, foot.x - 24, foot.y, this.madds, this.built.heightPx);
+      this.physics.add.collider(this.bekas, this.built.layer);
+    }
 
     this.ball = new Ball(this, this.madds);
     this.physics.add.collider(this.ball, this.built.layer, (_b, tile) => this.onBallHitTile(tile as Phaser.Tilemaps.Tile), () => this.ball.collidesWithWorld);
@@ -169,6 +179,7 @@ export class LevelScene extends Phaser.Scene {
       case 'log': {
         const log = new LogPlatform(this, p.x, p.y - 5, Number(o.props?.dx ?? 0) * TILE, Number(o.props?.dy ?? 0) * TILE, Number(o.props?.speed ?? 40));
         this.physics.add.collider(this.madds, log);
+        if (this.bekas) this.physics.add.collider(this.bekas, log);
         this.logs.push(log);
         break;
       }
@@ -218,6 +229,8 @@ export class LevelScene extends Phaser.Scene {
     for (const log of this.logs) log.step(delta);
     this.madds.update(delta, this.controls.state, speedMul);
     this.rideLogs();
+    this.bekas?.follow();
+    this.updateIdleAnimations();
     if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
     this.ball.update(delta);
     this.updateCamera(delta);
@@ -246,6 +259,9 @@ export class LevelScene extends Phaser.Scene {
   die(): void {
     if (this.respawning) return;
     this.respawning = true;
+    this.photoIdle = false;
+    this.bekas?.stopAffection();
+    this.madds.busy = false;
     synth.playSfx('fall');
     this.checkpoints.recordFall();
     this.power.onDeath();
@@ -331,6 +347,25 @@ export class LevelScene extends Phaser.Scene {
       this.madds.clearTint();
       this.burst(this.madds.x, this.madds.y - 12, 0, 10);
       this.emitPower();
+    }
+  }
+
+  /** Long rest: photo of Bekas before the rescue, the affection routine after. Any input interrupts. */
+  private updateIdleAnimations(): void {
+    const playing = this.photoIdle || !!this.bekas?.inAffection;
+    if (playing && this.controls.state.anyDown()) {
+      this.photoIdle = false;
+      this.bekas?.stopAffection();
+      this.madds.busy = false;
+      return;
+    }
+    if (playing || !this.idle.isLongIdle || !this.madds.onFloor || this.power.active) return;
+    if (this.bekas) {
+      this.bekas.startAffection();
+    } else {
+      this.photoIdle = true;
+      this.madds.busy = true;
+      this.madds.play('madds-photo', true);
     }
   }
 
