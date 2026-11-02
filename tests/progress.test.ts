@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { applyResult, isUnlocked, hasBekas, hasProgress } from '../src/progress';
+import { applyResult, isUnlocked, hasBekas, hasProgress, bekasJoinedFor } from '../src/progress';
+import { LEVELS } from '../src/levels/registry';
 import { defaultSave } from '../src/systems/saveStore';
 
 const result = (over = {}) => ({ levelId: '1-1', timeMs: 60000, falls: 3, cromo: false, animalsFreed: 2, animalsTotal: 2, ...over });
@@ -51,5 +52,21 @@ describe('desbloqueio e Bekas', () => {
   it('hasProgress', () => {
     expect(hasProgress(defaultSave())).toBe(false);
     expect(hasProgress(applyResult(defaultSave(), result(), 0))).toBe(true);
+  });
+});
+
+describe('mundos', () => {
+  const w1 = () => ({ ...defaultSave(), completed: ['1-1', '1-2', '1-3', '1-boss'] });
+
+  it('o 2-1 desbloqueia com o boss do Mundo 1', () => {
+    expect(isUnlocked(w1(), '2-1')).toBe(true);
+    expect(isUnlocked(w1(), '2-2')).toBe(false);
+    expect(isUnlocked(defaultSave(), '2-1')).toBe(false);
+  });
+
+  it('a Bekas está sempre presente a partir do Mundo 2', () => {
+    expect(bekasJoinedFor(defaultSave(), LEVELS['2-1'])).toBe(true);
+    expect(bekasJoinedFor(defaultSave(), LEVELS['1-1'])).toBe(false);
+    expect(bekasJoinedFor(w1(), LEVELS['1-1'])).toBe(true);
   });
 });

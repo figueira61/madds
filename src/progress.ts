@@ -1,5 +1,6 @@
 import type { SaveData } from './systems/saveStore';
-import { WORLD1_ORDER } from './levels/registry';
+import { LEVEL_ORDER } from './levels/registry';
+import type { LevelData } from './levels/format';
 
 export interface ResultLike {
   levelId: string;
@@ -24,13 +25,18 @@ export function applyResult(save: SaveData, r: ResultLike, power: number): SaveD
 }
 
 export function isUnlocked(save: SaveData, id: string): boolean {
-  const i = WORLD1_ORDER.indexOf(id);
+  const i = LEVEL_ORDER.indexOf(id);
   if (i <= 0) return i === 0;
-  return save.completed.includes(WORLD1_ORDER[i - 1]);
+  return save.completed.includes(LEVEL_ORDER[i - 1]);
 }
 
 export function hasBekas(save: SaveData): boolean {
   return save.completed.includes('1-boss');
+}
+
+/** Bekas is always there from World 2 on, even with a save that never beat the Hunter (dev links, old saves). */
+export function bekasJoinedFor(save: SaveData, level: LevelData): boolean {
+  return hasBekas(save) || level.world >= 2;
 }
 
 export function hasProgress(save: SaveData): boolean {

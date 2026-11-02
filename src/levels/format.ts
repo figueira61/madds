@@ -25,7 +25,7 @@ export interface LevelData {
   name: string;
   world: 1 | 2 | 3;
   kind: 'normal' | 'boss';
-  music: 'world1' | 'boss';
+  music: 'world1' | 'world2' | 'boss';
   tiles: string[];
   objects: LevelObject[];
   /** Cutscene ids played before / after the level. */

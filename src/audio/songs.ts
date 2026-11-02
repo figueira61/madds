@@ -1,6 +1,6 @@
 import type { Song } from './notes';
 
-export type MusicName = 'title' | 'world1' | 'boss' | 'transform' | 'reunion' | 'continua';
+export type MusicName = 'title' | 'world1' | 'world2' | 'boss' | 'transform' | 'reunion' | 'continua';
 
 const repeat = (s: string, n: number) => Array(n).fill(s).join(' ');
 
@@ -23,6 +23,25 @@ const WORLD1_BASS = [
   bassBar('C3', 'C4'), bassBar('C3', 'C4'), bassBar('A2', 'A3'), bassBar('C3', 'C4'),
   bassBar('F2', 'F3'), bassBar('C3', 'C4'), bassBar('G2', 'G3'), bassBar('G2', 'G3'),
 ].join(' ');
+
+/** World 2: bouncy, mechanical — staccato eighths over a walking bass, like pieces clicking into place. */
+const WORLD2_LEAD = [
+  'D5:0.5 R:0.5 D5:0.5 F5:0.5 A5:0.5 R:0.5 G5:0.5 F5:0.5',
+  'E5:0.5 R:0.5 E5:0.5 G5:0.5 C6:1 A5:1',
+  'D5:0.5 R:0.5 D5:0.5 F5:0.5 A5:0.5 C6:0.5 D6:0.5 C6:0.5',
+  'A5:1 G5:0.5 E5:0.5 F5:2',
+  'G5:0.5 R:0.5 G5:0.5 A#5:0.5 D6:0.5 R:0.5 C6:0.5 A#5:0.5',
+  'A5:0.5 R:0.5 A5:0.5 C6:0.5 F5:1 A5:1',
+  'G5:0.5 A5:0.5 A#5:0.5 A5:0.5 G5:0.5 F5:0.5 E5:0.5 C5:0.5',
+  'D5:2 R:1 A4:1',
+].join(' ');
+
+const WORLD2_BASS = [
+  bassBar('D3', 'D4'), bassBar('C3', 'C4'), bassBar('D3', 'D4'), bassBar('F2', 'F3'),
+  bassBar('G2', 'G3'), bassBar('F2', 'F3'), bassBar('C3', 'C4'), bassBar('D3', 'D4'),
+].join(' ');
+
+const CLICK_BEAT = repeat('C2:0.5 C7:0.25 C7:0.25 C4:0.5 C7:0.5', 2);
 
 const BOSS_LEAD = [
   'A4:0.5 A4:0.5 C5:0.5 A4:0.5 E5:0.5 D5:0.5 C5:0.5 B4:0.5',
@@ -49,6 +68,15 @@ export const SONGS: Record<MusicName, Song> = {
       { wave: 'square', volume: 0.1, notes: WORLD1_LEAD },
       { wave: 'triangle', volume: 0.22, notes: WORLD1_BASS },
       { wave: 'noise', volume: 0.05, notes: repeat(ROCK_BEAT, 8) },
+    ],
+  },
+  world2: {
+    bpm: 132,
+    loop: true,
+    tracks: [
+      { wave: 'square', volume: 0.09, notes: WORLD2_LEAD },
+      { wave: 'triangle', volume: 0.22, notes: WORLD2_BASS },
+      { wave: 'noise', volume: 0.05, notes: repeat(CLICK_BEAT, 8) },
     ],
   },
   boss: {
