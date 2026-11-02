@@ -24,6 +24,14 @@ export class Synth {
   private current: MusicName | null = null;
   private wanted: MusicName | null = null;
   private volumes = { music: 0.7, sfx: 0.8 };
+  private gestureHooked = false;
+  /** Mobile browsers only allow audio to start inside touchend/click/keydown, not touchstart: retry on each. */
+  private readonly onGesture = () => {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state === 'running') return;
+    void ctx.resume().then(() => this.startWanted());
+    this.startWanted();
+  };
 
   /** Must run inside a user gesture (iOS Safari). */
   unlock(): void {
@@ -41,14 +49,25 @@ export class Synth {
         this.applyVolumes();
       }
       void this.ctx.resume();
-      if (this.wanted && !this.timer) this.playMusic(this.wanted);
+      this.hookGestures();
+      this.startWanted();
     } catch {
       this.ctx = null;
     }
   }
 
   get unlocked(): boolean {
-    return this.ctx !== null;
+    return this.ctx?.state === 'running';
+  }
+
+  private startWanted(): void {
+    if (this.ctx?.state === 'running' && this.wanted && !this.timer) this.playMusic(this.wanted);
+  }
+
+  private hookGestures(): void {
+    if (this.gestureHooked || typeof document === 'undefined') return;
+    this.gestureHooked = true;
+    for (const type of ['touchend', 'pointerup', 'click', 'keydown']) document.addEventListener(type, this.onGesture, true);
   }
 
   setVolumes(music: number, sfx: number): void {

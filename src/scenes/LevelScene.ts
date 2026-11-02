@@ -34,6 +34,8 @@ export interface LevelResult {
   animalsTotal: number;
 }
 
+const NO_GROUP_DEFAULTS = {} as Phaser.Types.Physics.Arcade.PhysicsGroupDefaults;
+
 /** Converts tile coordinates of an object to the world point at the bottom-centre of that tile. */
 export function tileFoot(o: { x: number; y: number }): { x: number; y: number } {
   return { x: o.x * TILE + TILE / 2, y: (o.y + 1) * TILE };
@@ -116,11 +118,14 @@ export class LevelScene extends Phaser.Scene {
 
     this.ball = new Ball(this, this.madds);
     this.physics.add.collider(this.ball, this.built.layer, (_b, tile) => this.onBallHitTile(tile as Phaser.Tilemaps.Tile), () => this.ball.collidesWithWorld);
+    // Groups must not overwrite each body's own setup (velocity, gravity) when members are added.
     this.enemies = this.physics.add.group();
+    this.enemies.defaults = NO_GROUP_DEFAULTS;
     this.physics.add.collider(this.enemies, this.built.layer);
     this.physics.add.overlap(this.ball, this.enemies, (_b, e) => this.onBallHitEnemy(e as Enemy), () => this.ball.inFlight);
     this.physics.add.overlap(this.madds, this.enemies, (_m, e) => this.onTouchEnemy(e as Enemy));
     this.nets = this.physics.add.group();
+    this.nets.defaults = NO_GROUP_DEFAULTS;
     this.physics.add.collider(this.nets, this.built.layer, (n) => (n as Net).destroy());
     this.physics.add.overlap(this.madds, this.nets, (_m, n) => {
       (n as Net).destroy();
@@ -147,6 +152,7 @@ export class LevelScene extends Phaser.Scene {
     synth.playMusic(this.level.music);
     this.scene.launch('Hud', { level: this });
     this.events.once('shutdown', () => {
+      for (const ev of ['request-pause', 'madds-hurt', 'madds-died']) this.events.off(ev);
       this.scene.stop('Hud');
       this.controls.destroy();
     });
@@ -269,6 +275,7 @@ export class LevelScene extends Phaser.Scene {
     const r = this.health.hit();
     if (r === 'ignored') return false;
     this.power.damaged();
+    this.emitPower();
     this.events.emit('hud-hearts', this.health.hearts);
     this.events.emit('madds-hurt');
     synth.playSfx('hurt');

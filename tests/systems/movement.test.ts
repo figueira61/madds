@@ -92,3 +92,11 @@ describe('stepMovement', () => {
     expect(s.facing).toBe(1);
   });
 });
+
+describe('velocidade de queda', () => {
+  it('nunca passa de maxFallSpeed (não atravessa o chão em quedas longas)', () => {
+    const s = run({ ...createMoveState(), sinceFloorMs: 1000 }, NONE, AIR, 5000);
+    expect(s.vy).toBe(P.maxFallSpeed);
+    expect(P.maxFallSpeed).toBeLessThanOrEqual(600);
+  });
+});

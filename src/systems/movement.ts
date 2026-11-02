@@ -3,6 +3,7 @@ export interface MoveParams {
   accel: number;
   decel: number;
   gravity: number;
+  maxFallSpeed: number;
   jumpSpeed: number;
   jumpCut: number;
   coyoteMs: number;
@@ -19,6 +20,8 @@ export const MADDS_PARAMS: MoveParams = {
   accel: 1500,
   decel: 1800,
   gravity: 900,
+  /** Arcade only catches tiles overlapped by ≤16 px per step, so falls are capped well below 960 px/s. */
+  maxFallSpeed: 600,
   jumpSpeed: 330,
   jumpCut: 0.5,
   coyoteMs: 100,
@@ -132,7 +135,7 @@ export function stepMovement(
     n.jumpCutDone = true;
   }
 
-  if (!c.onFloor) n.vy += p.gravity * sec;
+  if (!c.onFloor) n.vy = Math.min(n.vy + p.gravity * sec, p.maxFallSpeed);
   else if (n.vy > 0) n.vy = 0;
 
   const pushingIntoWall = (c.wallRight && input.right) || (c.wallLeft && input.left);

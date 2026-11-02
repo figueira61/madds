@@ -52,7 +52,8 @@ export class CutsceneScene extends Phaser.Scene {
     this.hint = text(this, 450, 244, '▼', 10, '#ffffff');
     text(this, GAME_W - 8, 10, 'Pausa: saltar cena', 8, '#cfd6e6').setOrigin(1, 0.5);
 
-    this.controls = new InputManager(this, gameState.save.options);
+    // Taps on the dialogue advance it; on-screen buttons would double-advance and cover the text.
+    this.controls = new InputManager(this, { ...gameState.save.options, touch: false });
     this.input.on('pointerdown', () => this.advance());
     if (this.cfg.id === 'w1-reunion') synth.playMusic('reunion');
     this.events.once('shutdown', () => this.controls.destroy());

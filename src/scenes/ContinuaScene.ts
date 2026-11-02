@@ -5,13 +5,14 @@ import { synth } from '../audio/Synth';
 
 /** End of Phase 1: Madds and Bekas walk together into the sunset. */
 export class ContinuaScene extends Phaser.Scene {
-  private menu!: Menu;
+  private menu?: Menu;
 
   constructor() {
     super('Continua');
   }
 
   create(): void {
+    this.menu = undefined;
     const g = this.add.graphics();
     g.fillGradientStyle(0xff9a5a, 0xff9a5a, 0x6a3a7a, 0x6a3a7a, 1).fillRect(0, 0, GAME_W, GAME_H);
     g.fillStyle(0xffd34a, 1).fillCircle(GAME_W / 2, 170, 46);

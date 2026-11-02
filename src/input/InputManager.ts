@@ -16,12 +16,12 @@ export class InputManager {
   private readonly keys = new Map<Action, Phaser.Input.Keyboard.Key[]>();
   private readonly touch: TouchControls | null;
 
-  constructor(private readonly scene: Phaser.Scene, opts: { touchScale: number; touchOffsetX: number }) {
+  constructor(private readonly scene: Phaser.Scene, opts: { touchScale: number; touchOffsetX: number; touch?: boolean }) {
     const kb = scene.input.keyboard;
     if (kb) {
       for (const a of ACTIONS) this.keys.set(a, KEY_BINDINGS[a].map((k) => kb.addKey(k, true, false)));
     }
-    this.touch = isTouchDevice() ? new TouchControls(scene, touchLayout(GAME_W, GAME_H, opts.touchScale, opts.touchOffsetX)) : null;
+    this.touch = opts.touch !== false && isTouchDevice() ? new TouchControls(scene, touchLayout(GAME_W, GAME_H, opts.touchScale, opts.touchOffsetX)) : null;
   }
 
   setVisible(a: 'bekas' | 'super', visible: boolean): void {

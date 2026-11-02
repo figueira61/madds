@@ -50,12 +50,13 @@ export class ResultsScene extends Phaser.Scene {
     const next = nextLevel(r.levelId);
     const items = [];
     if (outro && firstClear) {
+      // The story ending (the reunion) must not be skippable by picking another option.
       items.push({ label: 'Continuar', action: () => this.scene.start('Cutscene', { id: outro, next: { scene: 'Continua' } }) });
-    } else if (next && LEVELS[next]) {
-      items.push({ label: 'Próximo nível', action: () => enterLevel(this, next) });
+    } else {
+      if (next && LEVELS[next]) items.push({ label: 'Próximo nível', action: () => enterLevel(this, next) });
+      items.push({ label: 'Mapa', action: () => this.scene.start('WorldMap') });
+      items.push({ label: 'Repetir nível', action: () => enterLevel(this, r.levelId) });
     }
-    items.push({ label: 'Mapa', action: () => this.scene.start('WorldMap') });
-    items.push({ label: 'Repetir nível', action: () => enterLevel(this, r.levelId) });
     this.menu = new Menu(this, GAME_W / 2, 176, items, 20, 12);
   }
 

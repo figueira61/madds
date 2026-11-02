@@ -18,7 +18,7 @@ export class Bekas extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(9);
-    (this.body as Phaser.Physics.Arcade.Body).setSize(16, 11).setOffset(2, 3);
+    (this.body as Phaser.Physics.Arcade.Body).setSize(16, 11).setOffset(2, 3).setMaxVelocity(1000, 600);
     this.play('bekas-idle');
   }
 
