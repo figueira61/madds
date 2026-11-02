@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import { TILE } from '../config';
 import { LEVELS } from '../levels/registry';
 import type { LevelData, LevelObject } from '../levels/format';
-import { buildTilemap, animateWater, animateConveyors, type BuiltMap } from '../levels/tilemap';
+import { buildTilemap, animateWater, animateConveyors, buildBricks, conveyorDir, revealHidden, type BuiltMap } from '../levels/tilemap';
+import { BrickBox, Door, Plate, Press, Scent, Switch } from '../entities/puzzle';
+import { LinkBoard, doorCanClose, type Box } from '../systems/links';
 import { TILE_FRAME } from '../art/sprites/tiles';
 import { drawBackground } from '../art/background';
 import { Madds } from '../entities/Madds';
@@ -48,6 +50,8 @@ export function tileFoot(o: { x: number; y: number }): { x: number; y: number } 
 
 /** Extra earth shown under the level on touch devices, where the buttons cover the bottom of the screen. */
 const TOUCH_FLOOR_PX = 52;
+/** Conveyor belts push whoever stands on them at this speed (px/s). */
+const CONVEYOR_SPEED = 60;
 
 export class LevelScene extends Phaser.Scene {
   level!: LevelData;
@@ -83,6 +87,11 @@ export class LevelScene extends Phaser.Scene {
   control = new ControlSwitch();
   bekasZones: Phaser.Geom.Rectangle[] = [];
   private zoneHintShown = false;
+  links = new LinkBoard();
+  private plates: Plate[] = [];
+  private doors: Door[] = [];
+  private presses: Press[] = [];
+  private scents: Scent[] = [];
 
   constructor() {
     super('Level');
@@ -108,6 +117,11 @@ export class LevelScene extends Phaser.Scene {
     this.control = new ControlSwitch();
     this.bekasZones = [];
     this.zoneHintShown = false;
+    this.links = new LinkBoard();
+    this.plates = [];
+    this.doors = [];
+    this.presses = [];
+    this.scents = [];
   }
 
   create(): void {
@@ -251,6 +265,41 @@ export class LevelScene extends Phaser.Scene {
       case 'paw-sign':
         this.add.image(p.x, p.y, 'bekas-sign').setOrigin(0.5, 1).setDepth(2);
         break;
+      case 'brick-box': {
+        const box = new BrickBox(this, p.x, p.y);
+        const rect = { x: Number(o.props?.bx), y: Number(o.props?.by), w: Number(o.props?.bw), h: Number(o.props?.bh) };
+        this.physics.add.overlap(this.ball, box, () => {
+          if (box.open()) buildBricks(this, this.built.layer, rect, (tx, ty) => this.burst(tx * TILE + 8, ty * TILE + 8, 1, 3));
+          this.ball.recall();
+        }, () => this.ball.inFlight);
+        break;
+      }
+      case 'plate':
+        this.plates.push(new Plate(this, p.x, p.y, o.id ?? ''));
+        break;
+      case 'switch': {
+        const sw = new Switch(this, p.x, p.y, o.id ?? '');
+        this.physics.add.overlap(this.ball, sw, () => {
+          if (sw.flip()) this.links.toggleSwitch(sw.linkId);
+          this.ball.recall();
+        }, () => this.ball.inFlight);
+        break;
+      }
+      case 'door': {
+        const door = new Door(this, p.x, p.y, String(o.props?.link ?? ''), Number(o.props?.h ?? 2));
+        this.doors.push(door);
+        this.physics.add.collider(this.madds, door);
+        if (this.bekas) this.physics.add.collider(this.bekas, door);
+        this.physics.add.collider(this.enemies, door);
+        this.physics.add.collider(this.ball, door, () => this.ball.onBounce(), () => this.ball.collidesWithWorld);
+        break;
+      }
+      case 'press':
+        this.presses.push(new Press(this, p.x + TILE / 2, o.y * TILE, Number(o.props?.period ?? 2400), Number(o.props?.offset ?? 0)));
+        break;
+      case 'scent':
+        this.scents.push(new Scent(this, p.x, p.y, o.x, o.y));
+        break;
       case 'exit': {
         const sign = this.physics.add.staticSprite(p.x, p.y - 12, 'exit', 0);
         this.physics.add.overlap(this.madds, sign, () => this.complete());
@@ -297,12 +346,62 @@ export class LevelScene extends Phaser.Scene {
       if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
     }
     this.rideLogs();
+    this.updatePuzzles(delta);
     this.ball.update(delta);
     this.updateCamera(delta);
     this.events.emit('level-update', delta);
 
     if (!this.respawning && this.touchingHazard()) this.die();
     if (this.bekas && this.bekasActive && this.hazardUnder(this.bekas.arcadeBody)) this.bekas.poof();
+  }
+
+  /** Plates, doors, presses, scents and conveyor belts. */
+  private updatePuzzles(delta: number): void {
+    const box = (b: Phaser.Physics.Arcade.Body): Box => ({ x: b.left, y: b.top, w: b.width, h: b.height });
+    const bodies: Box[] = [box(this.madds.arcadeBody)];
+    if (this.bekas) bodies.push(box(this.bekas.arcadeBody));
+    for (const e of this.enemies.getChildren() as Enemy[]) if (e.alive && e.body) bodies.push(box(e.body as Phaser.Physics.Arcade.Body));
+
+    for (const plate of this.plates) {
+      const z = plate.zone;
+      const pressed = bodies.some((b) => b.x < z.right && b.x + b.w > z.left && b.y < z.bottom && b.y + b.h > z.top);
+      plate.setPressed(pressed);
+      this.links.setPlate(plate.linkId, pressed);
+    }
+    for (const door of this.doors) {
+      const open = this.links.isOn(door.linkId);
+      if (!open && door.isOpen && !doorCanClose(door.box, bodies)) continue;
+      door.setOpen(open);
+    }
+
+    const maddsRect = this.madds.getBounds();
+    for (const press of this.presses) {
+      press.step(this.elapsedMs);
+      if (press.phase !== 'down') continue;
+      const hit = press.hitBox;
+      if (!this.respawning && Phaser.Geom.Intersects.RectangleToRectangle(hit, maddsRect)) this.die();
+      if (this.bekas && Phaser.Geom.Intersects.RectangleToRectangle(hit, this.bekas.getBounds())) this.bekas.poof();
+    }
+
+    if (this.bekasActive) {
+      const b = this.bekas!;
+      for (const sc of this.scents) {
+        if (sc.sniffed || Phaser.Math.Distance.Between(b.x, b.y, sc.x, sc.y) > 2 * TILE || !b.onFloor) continue;
+        sc.consume();
+        b.sniff();
+        revealHidden(this.built.layer, this.level.tiles, sc.tileX, sc.tileY);
+        this.burst(sc.x, sc.y - 10, 2, 10);
+      }
+    }
+
+    const dt = delta / 1000;
+    for (const who of [this.madds, this.bekas]) {
+      if (!who) continue;
+      const b = who.body as Phaser.Physics.Arcade.Body;
+      if (!(b.blocked.down || b.touching.down)) continue;
+      const dir = conveyorDir(this.built.layer.getTileAtWorldXY(who.x, b.bottom + 2));
+      if (dir) who.x += dir * CONVEYOR_SPEED * Math.min(dt, 0.05);
+    }
   }
 
   get bekasActive(): boolean {

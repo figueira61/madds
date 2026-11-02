@@ -4,7 +4,7 @@ import { validateLevel } from '../../src/levels/validate';
 
 describe('registry', () => {
   for (const [id, level] of Object.entries(LEVELS)) {
-    if (id === 'test-room') continue;
+    if (id.startsWith('test-')) continue;
     it(`o nível ${id} é válido`, () => {
       expect(validateLevel(level)).toEqual([]);
       expect(level.id).toBe(id);

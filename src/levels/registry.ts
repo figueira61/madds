@@ -8,9 +8,11 @@ import { L2_1 } from './world2/l2-1';
 import { L2_2 } from './world2/l2-2';
 import { L2_3 } from './world2/l2-3';
 import { L2_BOSS } from './world2/l2-boss';
+import { TEST_PUZZLE } from './world2/test-puzzle';
 
 export const LEVELS: Record<string, LevelData> = {
   'test-room': TEST_ROOM,
+  'test-puzzle': TEST_PUZZLE,
   '1-1': L1_1,
   '1-2': L1_2,
   '1-3': L1_3,

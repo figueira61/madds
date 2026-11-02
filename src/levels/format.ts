@@ -23,7 +23,10 @@ export type ObjectType =
 export const BOSS_TYPES: readonly ObjectType[] = ['boss-hunter', 'boss-robot'];
 export const ENEMY_TYPES: readonly ObjectType[] = ['beetle', 'bird', 'minifig', 'heli'];
 
-/** x, y in tiles. */
+/**
+ * x, y in tiles (the tile the object stands in). Exceptions: 'press' hangs from row y and slams
+ * down to the floor 3 rows below; 'bekas-zone' x, y is its top-left corner.
+ */
 export interface LevelObject {
   type: ObjectType;
   x: number;
