@@ -10,6 +10,7 @@ import { PauseScene } from './scenes/PauseScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { ResultsScene } from './scenes/ResultsScene';
 import { ContinuaScene } from './scenes/ContinuaScene';
+import { OrientationGuard } from './robustness/OrientationGuard';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -24,5 +25,7 @@ const game = new Phaser.Game({
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 }, debug: false } },
   scene: [BootScene, TitleScene, WorldMapScene, CutsceneScene, LevelScene, HudScene, PauseScene, OptionsScene, ResultsScene, ContinuaScene],
 });
+
+new OrientationGuard(game);
 
 if (import.meta.env.DEV) (window as unknown as { __game: Phaser.Game }).__game = game;
