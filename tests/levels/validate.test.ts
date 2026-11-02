@@ -180,4 +180,24 @@ describe('powerPotential', () => {
       expect(validateLevel(b).join(' ')).toContain('arena precisa de exatamente 1 boss');
     });
   });
+
+  describe('Mundo 3', () => {
+    it('autoscroll negativo é erro', () => {
+      expect(validateLevel({ ...valid(), autoscroll: -10 }).join(' ')).toContain('autoscroll');
+    });
+
+    it('arena do Colecionador precisa de 1 baliza', () => {
+      const b = boss();
+      b.objects = b.objects.map((o) => (o.type === 'boss-hunter' ? { ...o, type: 'boss-collector' as const } : o));
+      expect(validateLevel(b).join(' ')).toContain('arena do Colecionador precisa de 1 baliza');
+      b.objects.push({ type: 'goal', x: 4, y: 1, props: { w: 1, h: 1 } });
+      expect(validateLevel(b)).toEqual([]);
+    });
+
+    it('racers e drones contam para o potencial', () => {
+      const l = valid();
+      l.objects = l.objects.map((o, i) => (o.type === 'beetle' ? { ...o, type: (i % 2 ? 'racer' : 'drone') as 'racer' | 'drone' } : o));
+      expect(powerPotential(l)).toBe(150);
+    });
+  });
 });

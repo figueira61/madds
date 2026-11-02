@@ -9,6 +9,10 @@ import { L2_2 } from './world2/l2-2';
 import { L2_3 } from './world2/l2-3';
 import { L2_BOSS } from './world2/l2-boss';
 import { TEST_PUZZLE } from './world2/test-puzzle';
+import { L3_1 } from './world3/l3-1';
+import { L3_2 } from './world3/l3-2';
+import { L3_3 } from './world3/l3-3';
+import { L3_BOSS } from './world3/l3-boss';
 
 export const LEVELS: Record<string, LevelData> = {
   'test-room': TEST_ROOM,
@@ -21,6 +25,10 @@ export const LEVELS: Record<string, LevelData> = {
   '2-2': L2_2,
   '2-3': L2_3,
   '2-boss': L2_BOSS,
+  '3-1': L3_1,
+  '3-2': L3_2,
+  '3-3': L3_3,
+  '3-boss': L3_BOSS,
 };
 
 export type WorldId = 1 | 2 | 3;
@@ -28,7 +36,7 @@ export type WorldId = 1 | 2 | 3;
 export const WORLD_ORDER: Record<WorldId, readonly string[]> = {
   1: ['1-1', '1-2', '1-3', '1-boss'],
   2: ['2-1', '2-2', '2-3', '2-boss'],
-  3: [],
+  3: ['3-1', '3-2', '3-3', '3-boss'],
 };
 
 export const WORLD1_ORDER = WORLD_ORDER[1];

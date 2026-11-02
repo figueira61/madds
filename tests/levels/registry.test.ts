@@ -29,6 +29,12 @@ describe('registry', () => {
     expect(worldOf('2-3')).toBe(2);
     expect(worldOf('nada')).toBeNull();
     expect(firstLevelOf(2)).toBe('2-1');
-    expect(firstLevelOf(3)).toBeNull();
+  });
+
+  it('ordem do Mundo 3', () => {
+    expect(WORLD_ORDER[3]).toEqual(['3-1', '3-2', '3-3', '3-boss']);
+    expect(nextLevel('3-3')).toBe('3-boss');
+    expect(nextLevel('3-boss')).toBeNull();
+    expect(firstLevelOf(3)).toBe('3-1');
   });
 });

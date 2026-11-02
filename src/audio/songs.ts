@@ -1,6 +1,6 @@
 import type { Song } from './notes';
 
-export type MusicName = 'title' | 'world1' | 'world2' | 'boss' | 'transform' | 'reunion' | 'continua';
+export type MusicName = 'title' | 'world1' | 'world2' | 'world3' | 'boss' | 'final' | 'transform' | 'reunion' | 'continua';
 
 const repeat = (s: string, n: number) => Array(n).fill(s).join(' ');
 
@@ -43,6 +43,40 @@ const WORLD2_BASS = [
 
 const CLICK_BEAT = repeat('C2:0.5 C7:0.25 C7:0.25 C4:0.5 C7:0.5', 2);
 
+/** World 3: racing — fast driving bass and a bright, chanting lead like a stadium crowd. */
+const WORLD3_LEAD = [
+  'E5:0.5 E5:0.5 G5:0.5 E5:0.5 B5:1 A5:1',
+  'G5:0.5 F#5:0.5 E5:0.5 D5:0.5 E5:2',
+  'E5:0.5 E5:0.5 G5:0.5 E5:0.5 C6:1 B5:1',
+  'A5:0.5 G5:0.5 F#5:0.5 G5:0.5 A5:2',
+  'C6:1 B5:0.5 A5:0.5 G5:1 E5:1',
+  'D5:0.5 E5:0.5 G5:0.5 A5:0.5 B5:2',
+  'C6:0.5 C6:0.5 B5:0.5 A5:0.5 G5:0.5 A5:0.5 B5:1',
+  'E6:2 R:1 B4:1',
+].join(' ');
+
+const WORLD3_BASS = [
+  bassBar('E2', 'E3'), bassBar('E2', 'E3'), bassBar('C3', 'C4'), bassBar('D3', 'D4'),
+  bassBar('A2', 'A3'), bassBar('G2', 'G3'), bassBar('C3', 'C4'), bassBar('B2', 'B3'),
+].join(' ');
+
+/** Final boss: heroic minor-key march that turns major at the end of the loop. */
+const FINAL_LEAD = [
+  'A4:0.5 C5:0.5 E5:1 A5:1 G5:0.5 E5:0.5',
+  'F5:1 E5:0.5 D5:0.5 E5:2',
+  'A4:0.5 C5:0.5 E5:1 A5:1 B5:0.5 C6:0.5',
+  'B5:1 G#5:1 E5:2',
+  'F5:0.5 F5:0.5 A5:1 C6:1 A5:1',
+  'G5:0.5 G5:0.5 B5:1 D6:1 B5:1',
+  'C6:1 B5:0.5 A5:0.5 G#5:1 B5:1',
+  'A5:3 E5:1',
+].join(' ');
+
+const FINAL_BASS = [
+  bassBar('A2', 'A3'), bassBar('D2', 'D3'), bassBar('A2', 'A3'), bassBar('E2', 'E3'),
+  bassBar('F2', 'F3'), bassBar('G2', 'G3'), bassBar('E2', 'E3'), bassBar('A2', 'A3'),
+].join(' ');
+
 const BOSS_LEAD = [
   'A4:0.5 A4:0.5 C5:0.5 A4:0.5 E5:0.5 D5:0.5 C5:0.5 B4:0.5',
   'A4:0.5 A4:0.5 C5:0.5 A4:0.5 F5:1 E5:1',
@@ -77,6 +111,24 @@ export const SONGS: Record<MusicName, Song> = {
       { wave: 'square', volume: 0.09, notes: WORLD2_LEAD },
       { wave: 'triangle', volume: 0.22, notes: WORLD2_BASS },
       { wave: 'noise', volume: 0.05, notes: repeat(CLICK_BEAT, 8) },
+    ],
+  },
+  world3: {
+    bpm: 160,
+    loop: true,
+    tracks: [
+      { wave: 'square', volume: 0.09, notes: WORLD3_LEAD },
+      { wave: 'triangle', volume: 0.22, notes: WORLD3_BASS },
+      { wave: 'noise', volume: 0.06, notes: repeat(ROCK_BEAT, 8) },
+    ],
+  },
+  final: {
+    bpm: 150,
+    loop: true,
+    tracks: [
+      { wave: 'sawtooth', volume: 0.07, notes: FINAL_LEAD },
+      { wave: 'triangle', volume: 0.24, notes: FINAL_BASS },
+      { wave: 'noise', volume: 0.06, notes: repeat(ROCK_BEAT, 8) },
     ],
   },
   boss: {

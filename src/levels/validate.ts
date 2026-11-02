@@ -58,7 +58,7 @@ export function validateLevel(l: LevelData): string[] {
   for (const o of l.objects) {
     if (o.x < 0 || o.y < 0 || o.x >= width || o.y >= height) {
       errors.push(`${o.type} em (${o.x},${o.y}) está fora do mapa`);
-    } else if (o.type !== 'log' && o.type !== 'door' && o.type !== 'bekas-zone' && SOLID_TILES.includes(l.tiles[o.y][o.x] as TileChar)) {
+    } else if (o.type !== 'log' && o.type !== 'door' && o.type !== 'bekas-zone' && o.type !== 'goal' && SOLID_TILES.includes(l.tiles[o.y][o.x] as TileChar)) {
       errors.push(`${o.type} em (${o.x},${o.y}) está dentro de um tile sólido`);
     }
   }
@@ -72,6 +72,7 @@ export function validateLevel(l: LevelData): string[] {
   }
 
   errors.push(...world2Errors(l, ids));
+  if (l.autoscroll !== undefined && !(l.autoscroll > 0)) errors.push(`autoscroll ${l.autoscroll} tem de ser positivo`);
 
   if (l.kind === 'normal') {
     if (count('exit') < 1) errors.push('precisa de pelo menos 1 exit');
@@ -83,6 +84,7 @@ export function validateLevel(l: LevelData): string[] {
     if (count('cromo') !== 0) errors.push('arena de boss não pode ter cromo colocado');
     if (l.objects.filter((o) => BOSS_TYPES.includes(o.type)).length !== 1) errors.push('arena precisa de exatamente 1 boss');
     if (count('minion-spawn') < 1) errors.push('arena precisa de pelo menos 1 minion-spawn');
+    if (count('boss-collector') === 1 && count('goal') !== 1) errors.push('arena do Colecionador precisa de 1 baliza');
   }
 
   return errors;
