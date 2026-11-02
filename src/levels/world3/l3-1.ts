@@ -20,9 +20,9 @@ const g = new Grid(180, 17)
   .rect(74, 9, 3, 1, '=')
   .rect(79, 8, 3, 1, '=')
   .rect(94, 15, 4, 2, '.')
-  // staircase of parked cars
-  .rect(112, 13, 3, 2, '#')
-  .rect(116, 11, 3, 4, '#')
+  // staircase of parked cars (no gaps between them: a 1-tile well is a death trap while scrolling)
+  .rect(112, 13, 4, 2, '#')
+  .rect(116, 11, 4, 4, '#')
   .rect(120, 9, 3, 6, '#')
   .rect(140, 14, 4, 1, '^')
   .rect(150, 15, 4, 2, '.');

@@ -33,7 +33,12 @@ function world2Errors(l: LevelData, ids: Set<string>): string[] {
       errors.push(`porta em (${d.x},${d.y}) ligada a '${link}' que não existe`);
     }
   }
-  for (const z of l.objects.filter((o) => o.type === 'bekas-zone')) {
+  const zones = l.objects.filter((o) => o.type === 'bekas-zone');
+  for (const p of l.objects.filter((o) => o.type === 'plate')) {
+    const inside = zones.some((z) => p.x >= z.x && p.x < z.x + num(z, 'w') && p.y >= z.y && p.y < z.y + num(z, 'h'));
+    if (!inside) errors.push(`placa em (${p.x},${p.y}) fora de uma zona da Bekas`);
+  }
+  for (const z of zones) {
     if (z.x + num(z, 'w') > width || z.y + num(z, 'h') > height || num(z, 'w') <= 0 || num(z, 'h') <= 0) errors.push(`zona da Bekas fora do mapa em (${z.x},${z.y})`);
   }
   return errors;

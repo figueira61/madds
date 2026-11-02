@@ -4,7 +4,8 @@ import type { LevelData } from '../format';
 /*
  * 3-3 Bancadas do Estádio (30×80, vertical). Start under the stands: the gate is shut, so Bekas
  * climbs two seats and slips through the gap above it to the plate on the other side. Then a long
- * zigzag climb up the stands (drones patrol them) to the hatch onto the pitch level and the exit.
+ * zigzag climb up the stands (drones patrol them) to the hatch onto the pitch level; the exit is
+ * to the left of the hatch, so you never have to jump back over it.
  * The cromo sits on a ledge off the route near the top; the Golden Ball by the left wall.
  */
 const g = new Grid(30, 80)
@@ -52,7 +53,7 @@ export const L3_3: LevelData = {
   tiles: g.rows(),
   objects: [
     { type: 'start', x: 3, y: 77 },
-    { type: 'bekas-zone', x: 1, y: 60, props: { w: 19, h: 19 } },
+    { type: 'bekas-zone', x: 1, y: 60, props: { w: 22, h: 19 } },
     { type: 'paw-sign', x: 5, y: 77 },
     { type: 'door', x: 14, y: 77, props: { link: 'p1', h: 3 } },
     { type: 'plate', x: 20, y: 77, id: 'p1' },
@@ -67,11 +68,11 @@ export const L3_3: LevelData = {
     { type: 'drone', x: 7, y: 32, props: { range: 3 } },
     { type: 'drone', x: 20, y: 26, props: { range: 3 } },
     { type: 'cromo', x: 28, y: 19 },
-    { type: 'checkpoint', x: 20, y: 14, id: 'c4' },
+    { type: 'checkpoint', x: 13, y: 14, id: 'c4' },
     { type: 'drone', x: 10, y: 9, props: { range: 3 } },
     { type: 'drone', x: 8, y: 70, props: { range: 2 } },
     { type: 'racer', x: 6, y: 14 },
     { type: 'racer', x: 12, y: 14 },
-    { type: 'exit', x: 26, y: 14 },
+    { type: 'exit', x: 2, y: 14 },
   ],
 };

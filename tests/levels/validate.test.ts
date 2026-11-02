@@ -149,7 +149,7 @@ describe('powerPotential', () => {
 
     it('porta ligada a uma placa existente é válida; placa sem id é erro', () => {
       const door: LevelObject = { type: 'door', x: 6, y: 1, props: { link: 'p1', h: 2 } };
-      expect(validateLevel(withTiles(valid().tiles, [door, { type: 'plate', x: 2, y: 2, id: 'p1' }]))).toEqual([]);
+      expect(validateLevel(withTiles(valid().tiles, [door, { type: 'plate', x: 2, y: 2, id: 'p1' }, { type: 'bekas-zone', x: 0, y: 0, props: { w: 5, h: 3 } }]))).toEqual([]);
       expect(validateLevel(withTiles(valid().tiles, [{ type: 'switch', x: 2, y: 2 }])).join(' ')).toContain('switch em (2,2) não tem id');
       expect(validateLevel(withTiles(valid().tiles, [{ type: 'plate', x: 2, y: 2, id: 'c1' }])).join(' ')).toContain("id repetido 'c1'");
     });
@@ -158,6 +158,13 @@ describe('powerPotential', () => {
       const rows = ['..........', '.h........', '..........', '##########'];
       expect(validateLevel(withTiles(rows)).join(' ')).toContain('plataforma escondida em (1,1) sem cheiro');
       expect(validateLevel(withTiles(rows, [{ type: 'scent', x: 6, y: 2 }]))).toEqual([]);
+    });
+
+    it('placa fora de uma zona da Bekas é erro (a Bekas estacionada saltaria para a Madds)', () => {
+      const plate: LevelObject = { type: 'plate', x: 8, y: 2, id: 'p9' };
+      expect(validateLevel(withTiles(valid().tiles, [plate])).join(' ')).toContain('placa em (8,2) fora de uma zona da Bekas');
+      const zone: LevelObject = { type: 'bekas-zone', x: 6, y: 0, props: { w: 4, h: 3 } };
+      expect(validateLevel(withTiles(valid().tiles, [plate, zone]))).toEqual([]);
     });
 
     it('zona da Bekas fora do mapa é erro', () => {
