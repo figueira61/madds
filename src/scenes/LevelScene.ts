@@ -6,6 +6,9 @@ import { buildTilemap, animateWater, type BuiltMap } from '../levels/tilemap';
 import { TILE_FRAME } from '../art/sprites/tiles';
 import { drawForestBackground } from '../art/background';
 import { Madds } from '../entities/Madds';
+import { Ball } from '../entities/Ball';
+import { Beetle, Bird, type Enemy } from '../entities/enemies';
+import { Cage, LogPlatform, Pickup } from '../entities/props';
 import { InputManager } from '../input/InputManager';
 import { Health } from '../systems/health';
 import { Checkpoints } from '../systems/checkpoints';
@@ -42,6 +45,9 @@ export class LevelScene extends Phaser.Scene {
   checkpoints!: Checkpoints;
   power!: PowerMeter;
   idle!: IdleTimer;
+  ball!: Ball;
+  enemies!: Phaser.Physics.Arcade.Group;
+  logs: LogPlatform[] = [];
   bekasJoined = false;
   elapsedMs = 0;
   gotCromo = false;
@@ -67,6 +73,7 @@ export class LevelScene extends Phaser.Scene {
     this.finished = false;
     this.respawning = false;
     this.frozen = false;
+    this.logs = [];
   }
 
   create(): void {
@@ -86,7 +93,14 @@ export class LevelScene extends Phaser.Scene {
     this.power = new PowerMeter(gameState.save.power);
     this.idle = new IdleTimer();
 
-    for (const o of this.level.objects) this.spawnObject(o);
+    this.ball = new Ball(this, this.madds);
+    this.physics.add.collider(this.ball, this.built.layer, (_b, tile) => this.onBallHitTile(tile as Phaser.Tilemaps.Tile), () => this.ball.collidesWithWorld);
+    this.enemies = this.physics.add.group();
+    this.physics.add.collider(this.enemies, this.built.layer);
+    this.physics.add.overlap(this.ball, this.enemies, (_b, e) => this.onBallHitEnemy(e as Enemy), () => this.ball.inFlight);
+    this.physics.add.overlap(this.madds, this.enemies, (_m, e) => this.onTouchEnemy(e as Enemy));
+
+    this.level.objects.forEach((o, i) => this.spawnObject(o, i));
     this.animalsTotal = this.level.objects.filter((o) => o.type === 'cage').length;
 
     const cam = this.cameras.main;
@@ -106,9 +120,51 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /** Hook for object types; later tasks add more cases. */
-  spawnObject(o: LevelObject): void {
+  spawnObject(o: LevelObject, index = 0): void {
     const p = tileFoot(o);
     switch (o.type) {
+      case 'beetle':
+        this.addEnemy(new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), Number(o.props?.speed ?? 40)));
+        break;
+      case 'bird':
+        this.addEnemy(new Bird(this, p.x, p.y - 8, Number(o.props?.range ?? 4) * TILE));
+        break;
+      case 'cage': {
+        const cage = new Cage(this, p.x, p.y, o.id ?? `cage-${index}`, Cage.speciesFor(index, o.props?.species));
+        this.physics.add.overlap(this.ball, cage, () => {
+          if (cage.opened) return;
+          cage.open();
+          this.animalsFreed += 1;
+          this.power.animalFreed();
+          this.emitPower();
+          this.ball.recall();
+        }, () => this.ball.inFlight);
+        break;
+      }
+      case 'golden-ball':
+      case 'cromo': {
+        const item = new Pickup(this, p.x, p.y - 8, o.type);
+        this.physics.add.overlap(this.madds, item, () => {
+          if (item.taken) return;
+          item.collect();
+          if (o.type === 'cromo') {
+            this.gotCromo = true;
+            this.events.emit('hud-cromo', true);
+            synth.playSfx('cromo');
+          } else {
+            this.power.goldenBall();
+            this.emitPower();
+            synth.playSfx('golden');
+          }
+        });
+        break;
+      }
+      case 'log': {
+        const log = new LogPlatform(this, p.x, p.y - 5, Number(o.props?.dx ?? 0) * TILE, Number(o.props?.dy ?? 0) * TILE, Number(o.props?.speed ?? 40));
+        this.physics.add.collider(this.madds, log);
+        this.logs.push(log);
+        break;
+      }
       case 'checkpoint': {
         const flag = this.physics.add.staticSprite(p.x, p.y - 12, 'checkpoint', 0);
         this.physics.add.overlap(this.madds, flag, () => {
@@ -146,7 +202,11 @@ export class LevelScene extends Phaser.Scene {
     this.idle.update(delta, this.controls.state.anyDown() || !this.madds.onFloor || Math.abs(this.madds.move.vx) > 1);
 
     const speedMul = this.power.active ? POWER.speedMul : 1;
+    for (const log of this.logs) log.step(delta);
     this.madds.update(delta, this.controls.state, speedMul);
+    this.rideLogs();
+    if (this.controls.state.justPressed('kick') && !this.madds.busy && this.ball.kick(this.madds, this.power.active)) this.madds.playKick();
+    this.ball.update(delta);
     this.updateCamera(delta);
     this.events.emit('level-update', delta);
 
@@ -207,6 +267,70 @@ export class LevelScene extends Phaser.Scene {
     this.madds.arcadeBody.setVelocity(0, 0);
     this.events.emit('level-complete', result);
     gameState.onLevelComplete(this, result, this.power.active ? 0 : this.power.value);
+  }
+
+  addEnemy(e: Enemy): void {
+    this.enemies.add(e);
+  }
+
+  emitPower(): void {
+    this.events.emit('hud-power', this.power.value, this.power.active);
+  }
+
+  /** Records a defeated enemy for the power bar. */
+  enemyDefeated(e: Enemy, chainIndex: number): void {
+    if (!e.alive) return;
+    e.defeat();
+    this.power.enemyDefeated(chainIndex);
+    this.emitPower();
+    synth.playSfx('enemy');
+    this.burst(e.x, e.y - 6, 1);
+  }
+
+  burst(x: number, y: number, frame: number, count = 6): void {
+    for (let i = 0; i < count; i++) {
+      const a = (Math.PI * 2 * i) / count;
+      const p = this.add.image(x, y, 'particle', frame).setDepth(12);
+      this.tweens.add({ targets: p, x: x + Math.cos(a) * 14, y: y + Math.sin(a) * 14, alpha: 0, duration: 350, onComplete: () => p.destroy() });
+    }
+  }
+
+  private onBallHitEnemy(e: Enemy): void {
+    if (!e.alive) return;
+    this.enemyDefeated(e, this.ball.chainIndex);
+    this.ball.chainIndex += 1;
+    if (!this.ball.powered) this.ball.ricochet();
+  }
+
+  private onTouchEnemy(e: Enemy): void {
+    if (!e.alive) return;
+    if (this.power.active) this.enemyDefeated(e, 0);
+    else this.hurtMadds(e.x);
+  }
+
+  private onBallHitTile(tile: Phaser.Tilemaps.Tile): void {
+    if (this.ball.powered && tile.index === TILE_FRAME.reinforced) {
+      this.built.layer.removeTileAt(tile.x, tile.y);
+      synth.playSfx('break');
+      this.cameras.main.shake(80, 0.004);
+      this.burst(tile.getCenterX(), tile.getCenterY(), 4, 8);
+      return;
+    }
+    this.ball.onBounce();
+  }
+
+  private rideLogs(): void {
+    const b = this.madds.arcadeBody;
+    for (const log of this.logs) {
+      const lb = log.body as Phaser.Physics.Arcade.Body;
+      const standing = Math.abs(b.bottom - lb.top) < 3 && b.right > lb.left && b.left < lb.right && this.madds.move.vy >= 0;
+      if (standing) this.madds.x += log.x - log.prevX;
+    }
+  }
+
+  private isGroundAt(worldX: number, worldY: number): boolean {
+    const t = this.built.layer.getTileAtWorldXY(worldX, worldY);
+    return !!t && t.collides;
   }
 
   isSolidAt(worldX: number, worldY: number): boolean {

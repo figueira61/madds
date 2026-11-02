@@ -25,6 +25,13 @@ export const TEST_ROOM: LevelData = {
     { type: 'checkpoint', x: 25, y: 14, id: 'c1' },
     { type: 'checkpoint', x: 60, y: 14, id: 'c2' },
     { type: 'cromo', x: 80, y: 10 },
+    { type: 'cage', x: 8, y: 14, id: 'a' },
+    { type: 'golden-ball', x: 14, y: 10 },
+    { type: 'bird', x: 40, y: 7, props: { range: 3 } },
+    { type: 'log', x: 30, y: 13, props: { dx: 4, speed: 40 } },
+    { type: 'beetle', x: 62, y: 14 },
+    { type: 'beetle', x: 64, y: 14 },
+    { type: 'beetle', x: 66, y: 14 },
     { type: 'exit', x: 95, y: 14 },
   ],
 };
