@@ -137,7 +137,8 @@ export class Bekas extends Phaser.Physics.Arcade.Sprite {
     const m = this.madds;
     this.parked = false;
     this.move = { ...createMoveState(), facing: this.move.facing };
-    this.arcadeBody.reset(m.x - m.facing * 20, m.y - 2);
+    // Ahead of Madds, not behind: behind may be the wrong side of a door she just walked through.
+    this.arcadeBody.reset(m.x + m.facing * 6, m.y - 2);
     for (let i = 0; i < 6; i++) {
       const p = this.scene.add.image(this.x, this.y - 6, 'particle', 0).setDepth(12);
       this.scene.tweens.add({ targets: p, x: this.x + Phaser.Math.Between(-14, 14), y: this.y - Phaser.Math.Between(4, 20), alpha: 0, duration: 400, onComplete: () => p.destroy() });
@@ -146,7 +147,9 @@ export class Bekas extends Phaser.Physics.Arcade.Sprite {
 
   /** Sit → paw → cookie → eat → hug → wag, looping until stopAffection(). */
   startAffection(): void {
-    if (this.inAffection) return;
+    if (this.inAffection || this.parked) return;
+    // Only when she is actually next to Madds: the tween below ignores walls.
+    if (Math.abs(this.y - this.madds.y) > 8 || Math.abs(this.x - this.madds.x) > 48) return;
     this.inAffection = true;
     const m = this.madds;
     m.busy = true;

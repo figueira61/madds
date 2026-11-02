@@ -87,7 +87,7 @@ export class Door extends Phaser.GameObjects.TileSprite {
   }
 }
 
-/** Wall switch: the ball flips it. */
+/** Wall switch: the ball turns it on, and it stays on (so a stray kick can never shut a door again). */
 export class Switch extends Phaser.Physics.Arcade.Sprite {
   /** Named `lit`: `on` is Phaser's event method. */
   lit = false;
@@ -101,9 +101,9 @@ export class Switch extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
   }
 
-  /** Flips the lever (ignored for 400 ms after a flip so one kick counts once). Returns true if flipped. */
+  /** Turns the lever on (ignored once on). Returns true if it changed. */
   flip(): boolean {
-    if (this.scene.time.now < this.readyAt) return false;
+    if (this.lit || this.scene.time.now < this.readyAt) return false;
     this.readyAt = this.scene.time.now + 400;
     this.lit = !this.lit;
     this.setFrame(this.lit ? 1 : 0);

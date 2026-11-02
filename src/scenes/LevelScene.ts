@@ -455,6 +455,8 @@ export class LevelScene extends Phaser.Scene {
     if (!this.control.toggle(canSwitch)) return;
     const nowBekas = this.control.active === 'bekas';
     this.bekas.stopAffection();
+    // A Bekas left in another zone (e.g. behind a door) first comes back to Madds.
+    if (nowBekas && zoneOf(this.bekas.x, this.bekas.y) !== zoneOf(this.madds.x, this.madds.y)) this.bekas.poof();
     this.bekas.setControlled(nowBekas);
     if (nowBekas) this.madds.resetMotion();
     this.cameras.main.startFollow(nowBekas ? this.bekas : this.madds, true, 0.15, 0.15);
@@ -483,7 +485,8 @@ export class LevelScene extends Phaser.Scene {
 
   /** Damages Madds (enemy, projectile). Returns false if she was immune. */
   hurtMadds(fromX: number): boolean {
-    if (this.power.active || this.respawning) return false;
+    // While the player drives Bekas, the Madds left waiting is out of play.
+    if (this.power.active || this.respawning || this.bekasActive) return false;
     const r = this.health.hit();
     if (r === 'ignored') return false;
     this.power.damaged();

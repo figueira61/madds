@@ -41,7 +41,7 @@ export function arcVelocity(fx: number, fy: number, tx: number, ty: number): { v
   return { vx: (tx - fx) / NET_FLIGHT_S, vy: (ty - fy - 0.5 * NET_GRAVITY * NET_FLIGHT_S * NET_FLIGHT_S) / NET_FLIGHT_S };
 }
 
-/** The Hunter: three phases (walk + nets, jumps, net fans + charges). Emits 'hunter-defeated' on the scene. */
+/** The Hunter: three phases (walk + nets, jumps, net fans + charges). Emits 'boss-defeated' on the scene. */
 export class Hunter extends Phaser.Physics.Arcade.Sprite implements Boss {
   hp = HUNTER_MAX_HP;
   readonly maxHp = HUNTER_MAX_HP;
