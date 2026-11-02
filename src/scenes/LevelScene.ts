@@ -16,6 +16,7 @@ import { PowerMeter, POWER } from '../systems/powerMeter';
 import { IdleTimer } from '../systems/idle';
 import { synth } from '../audio/Synth';
 import { gameState } from '../gameState';
+import type { PauseChoice } from './PauseScene';
 
 export interface LevelSceneData {
   levelId: string;
@@ -116,6 +117,12 @@ export class LevelScene extends Phaser.Scene {
 
     this.time.addEvent({ delay: 400, loop: true, callback: () => animateWater(this.built.layer, (this.waterPhase = this.waterPhase === 0 ? 1 : 0)) });
     synth.playMusic(this.level.music);
+    this.scene.launch('Hud', { level: this });
+    this.events.once('shutdown', () => {
+      this.scene.stop('Hud');
+      this.controls.destroy();
+    });
+    this.events.on('request-pause', () => this.openPause());
     this.events.emit('level-ready');
   }
 
@@ -201,6 +208,12 @@ export class LevelScene extends Phaser.Scene {
     this.power.update(delta);
     this.idle.update(delta, this.controls.state.anyDown() || !this.madds.onFloor || Math.abs(this.madds.move.vx) > 1);
 
+    if (this.controls.state.justPressed('super') && !this.madds.busy && this.power.activate()) {
+      this.transform();
+      return;
+    }
+    this.updateSuper();
+
     const speedMul = this.power.active ? POWER.speedMul : 1;
     for (const log of this.logs) log.step(delta);
     this.madds.update(delta, this.controls.state, speedMul);
@@ -267,6 +280,58 @@ export class LevelScene extends Phaser.Scene {
     this.madds.arcadeBody.setVelocity(0, 0);
     this.events.emit('level-complete', result);
     gameState.onLevelComplete(this, result, this.power.active ? 0 : this.power.value);
+  }
+
+  openPause(): void {
+    this.scene.pause();
+    synth.suspend();
+    this.scene.launch('Pause', { onChoice: (c: PauseChoice) => this.onPauseChoice(c) });
+  }
+
+  private onPauseChoice(c: PauseChoice): void {
+    synth.resume();
+    this.scene.stop('Pause');
+    if (c === 'resume') this.scene.resume();
+    else if (c === 'restart') this.scene.restart();
+    else if (c === 'map') this.scene.start('WorldMap');
+    else if (c === 'options') this.scene.launch('Options', { returnTo: 'Pause', onClose: () => this.openPause() });
+  }
+
+  /** Freezes gameplay for the A.D.Q.C. transformation, then resumes with the kit on. */
+  private transform(): void {
+    this.frozen = true;
+    this.physics.pause();
+    this.madds.busy = true;
+    this.madds.setFlipX(false);
+    this.madds.anims.stop();
+    this.madds.play('transform-play');
+    synth.playSfx('adqc');
+    synth.playMusic('transform');
+    this.cameras.main.flash(300, 90, 140, 240);
+    this.events.emit('hud-adqc');
+    this.emitPower();
+    this.madds.once('animationcomplete-transform-play', () => {
+      this.madds.setAdqc(true);
+      this.madds.busy = false;
+      this.frozen = false;
+      this.physics.resume();
+      this.cameras.main.flash(200, 255, 255, 255);
+      this.burst(this.madds.x, this.madds.y - 12, 2, 10);
+      synth.playMusic(this.level.music);
+    });
+  }
+
+  private updateSuper(): void {
+    this.controls.setVisible('super', this.power.canActivate());
+    if (this.power.active) {
+      this.emitPower();
+      this.madds.setTint(Math.floor(this.time.now / 100) % 2 === 0 ? 0xffffff : 0xbfd8ff);
+    } else if (this.madds.adqc) {
+      this.madds.setAdqc(false);
+      this.madds.clearTint();
+      this.burst(this.madds.x, this.madds.y - 12, 0, 10);
+      this.emitPower();
+    }
   }
 
   addEnemy(e: Enemy): void {
