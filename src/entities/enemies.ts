@@ -13,18 +13,28 @@ function knockOut(e: Phaser.Physics.Arcade.Sprite, deadAnim: string): void {
   e.scene.tweens.add({ targets: e, y: e.y - 10, alpha: 0, duration: 600, ease: 'Quad.easeOut', onComplete: () => e.destroy() });
 }
 
-/** Clockwork beetle: walks and turns around at walls and ledges. */
+export type WalkerSkin = 'beetle' | 'minifig';
+export type FlyerSkin = 'bird' | 'heli';
+
+/** Clockwork beetle (World 1) or block figure (World 2): walks and turns around at walls and ledges. */
 export class Beetle extends Phaser.Physics.Arcade.Sprite implements Enemy {
   alive = true;
   private dir: 1 | -1 = -1;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, private readonly isGround: (x: number, y: number) => boolean, private readonly speed = 40) {
-    super(scene, x, y, 'beetle', 0);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    private readonly isGround: (x: number, y: number) => boolean,
+    private readonly speed = 40,
+    private readonly skin: WalkerSkin = 'beetle',
+  ) {
+    super(scene, x, y, skin, 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(8);
     (this.body as Phaser.Physics.Arcade.Body).setSize(14, 9).setOffset(1, 3);
-    this.play('beetle-walk');
+    this.play(`${skin}-walk`);
   }
 
   preUpdate(time: number, delta: number): void {
@@ -42,22 +52,22 @@ export class Beetle extends Phaser.Physics.Arcade.Sprite implements Enemy {
   defeat(): void {
     if (!this.alive) return;
     this.alive = false;
-    knockOut(this, 'beetle-dead');
+    knockOut(this, `${this.skin}-dead`);
   }
 }
 
-/** Drone bird: hovers back and forth on a sine path. props.range = half-width in tiles. */
+/** Drone bird (World 1) or block helicopter (World 2): hovers back and forth on a sine path. props.range = half-width in tiles. */
 export class Bird extends Phaser.Physics.Arcade.Sprite implements Enemy {
   alive = true;
   private t = Math.random() * Math.PI * 2;
 
-  constructor(scene: Phaser.Scene, private readonly x0: number, private readonly y0: number, private readonly rangePx: number) {
-    super(scene, x0, y0, 'bird', 0);
+  constructor(scene: Phaser.Scene, private readonly x0: number, private readonly y0: number, private readonly rangePx: number, private readonly skin: FlyerSkin = 'bird') {
+    super(scene, x0, y0, skin, 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(8);
     (this.body as Phaser.Physics.Arcade.Body).setAllowGravity(false).setSize(12, 8).setOffset(2, 2);
-    this.play('bird-fly');
+    this.play(`${skin}-fly`);
   }
 
   preUpdate(time: number, delta: number): void {
@@ -72,6 +82,6 @@ export class Bird extends Phaser.Physics.Arcade.Sprite implements Enemy {
   defeat(): void {
     if (!this.alive) return;
     this.alive = false;
-    knockOut(this, 'bird-dead');
+    knockOut(this, `${this.skin}-dead`);
   }
 }

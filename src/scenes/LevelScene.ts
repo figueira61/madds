@@ -204,6 +204,12 @@ export class LevelScene extends Phaser.Scene {
       case 'bird':
         this.addEnemy(new Bird(this, p.x, p.y - 8, Number(o.props?.range ?? 4) * TILE));
         break;
+      case 'minifig':
+        this.addEnemy(new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), Number(o.props?.speed ?? 45), 'minifig'));
+        break;
+      case 'heli':
+        this.addEnemy(new Bird(this, p.x, p.y - 8, Number(o.props?.range ?? 4) * TILE, 'heli'));
+        break;
       case 'cage': {
         const cage = new Cage(this, p.x, p.y, o.id ?? `cage-${index}`, Cage.speciesFor(index, o.props?.species));
         this.physics.add.overlap(this.ball, cage, () => {
@@ -598,7 +604,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.minions.length >= 2) return;
     const p = Phaser.Utils.Array.GetRandom(this.minionSpawns);
     this.burst(p.x, p.y - 8, 4, 8);
-    const minion = new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y));
+    const minion = new Beetle(this, p.x, p.y, (x, y) => this.isGroundAt(x, y), 40, this.level.world === 2 ? 'minifig' : 'beetle');
     this.addEnemy(minion);
     this.minions.push(minion);
   }
